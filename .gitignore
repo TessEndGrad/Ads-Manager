@@ -1,0 +1,33 @@
+# Байт-код Python (Кэш)
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.cache/
+
+# Виртуальные окружения
+.venv/
+venv/
+ENV/
+env/
+
+# Переменные окружения и секреты (конфиденциальные данные)
+.env
+.env.*
+!.env.example
+
+# Настройки IDE и редакторов
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+
+# Логи и дампы
+*.log
+logs/
