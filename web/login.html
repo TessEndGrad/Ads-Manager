@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход — Публикации</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+  
+  <div class="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md">
+    <div class="flex justify-center mb-8">
+      <div class="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white text-4xl font-bold">P</div>
+    </div>
+    
+    <h1 id="formTitle" class="text-3xl font-semibold text-center mb-2">Вход в систему</h1>
+    <p class="text-center text-gray-500 mb-8" id="formSubtitle">Планирование публикаций</p>
+
+    <div class="space-y-5">
+      <input type="text" id="name" placeholder="Ваше имя" class="hidden w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+
+      <input type="email" id="email" placeholder="Email" class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+
+      <input type="password" id="password" placeholder="Пароль" class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+
+      <button onclick="submitForm()" id="submitBtn"
+              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 rounded-2xl transition">
+        Войти
+      </button>
+    </div>
+
+    <div class="text-center mt-6">
+      <button onclick="toggleForm()" id="toggleBtn" class="text-emerald-600 hover:underline">
+        Нет аккаунта? Зарегистрироваться
+      </button>
+    </div>
+
+    <p class="text-center text-xs text-gray-400 mt-8">
+      Демо: moderator@demo.ru / 123456
+    </p>
+  </div>
+  <script src="js/script_login.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+:root {
+  --primary: #10b981;
+  --primary-dark: #059669;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  margin: 4px 0;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.menu-item:hover { background-color: #f1f5f9; }
+.menu-item.active {
+  background-color: #ecfdf5;
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+.pub-card {
+  transition: all 0.25s;
+}
+.pub-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+.modal-content {
+    background: #1a1a1a;
+    max-width: 500px;
+    width: 90%;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+/* Кнопки */
+.btn-primary, .btn-secondary, .btn-success, .btn-danger {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-trirdary{
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    float: right;
+}
+
+.btn-primary { background: #facc15; color: black; }
+.btn-secondary { background: #333; color: white; }
+.btn-trirdary { background: #333; color: white; }
+.btn-success { background: #22c55e; color: white; }
+.btn-danger { background: #ef4444; color: white; }
