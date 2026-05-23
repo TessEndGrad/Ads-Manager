@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход — Ads Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md">
+    <div class="flex justify-center mb-8">
+      <div class="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold">A</div>
+    </div>
+    <h1 id="formTitle" class="text-3xl font-semibold text-center mb-2">Вход в систему</h1>
+    <p class="text-center text-gray-500 mb-8" id="formSubtitle">Ads Manager — планирование публикаций</p>
+
+    <div class="space-y-4">
+      <input type="text" id="username" placeholder="Имя пользователя (при регистрации)"
+             class="hidden w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+      <input type="email" id="email" placeholder="Email"
+             class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+      <input type="password" id="password" placeholder="Пароль"
+             class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+      <p id="errorMsg" class="text-red-500 text-sm hidden"></p>
+      <button onclick="submitForm()" id="submitBtn"
+              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 rounded-2xl transition">
+        Войти
+      </button>
+    </div>
+
+    <div class="text-center mt-6">
+      <button onclick="toggleForm()" id="toggleBtn" class="text-emerald-600 hover:underline text-sm">
+        Нет аккаунта? Зарегистрироваться
+      </button>
+    </div>
+    <p class="text-center text-xs text-gray-400 mt-8">
+      Демо: manager@demo.ru / 123456
+    </p>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8000/api/v1';
+    let isLogin = true;
+
+    function toggleForm() {
+      isLogin = !isLogin;
+      document.getElementById('formTitle').textContent = isLogin ? 'Вход в систему' : 'Регистрация';
+      document.getElementById('formSubtitle').textContent = isLogin ? 'Ads Manager — планирование публикаций' : 'Создайте новый аккаунт';
+      document.getElementById('username').classList.toggle('hidden', isLogin);
+      document.getElementById('submitBtn').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
+      document.getElementById('toggleBtn').textContent = isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти';
+      document.getElementById('errorMsg').classList.add('hidden');
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    async function submitForm() {
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      if (!email || !password) { showError('Заполните все поля'); return; }
+
+      try {
+        if (isLogin) {
+          const res = await fetch(`${API}/auth/login`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ email, password })
+          });
+          if (!res.ok) { const e = await res.json(); showError(e.detail || 'Ошибка'); return; }
+          const data = await res.json();
+          localStorage.setItem('token', data.access_token);
+          window.location.href = 'index.html';
+        } else {
+          const username = document.getElementById('username').value.trim();
+          if (!username) { showError('Введите имя пользователя'); return; }
+          const res = await fetch(`${API}/auth/register`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ username, email, password })
+          });
+          if (!res.ok) { const e = await res.json(); showError(e.detail || 'Ошибка'); return; }
+          alert('Регистрация успешна! Войдите в систему.');
+          toggleForm();
+        }
+      } catch(e) { showError('Нет соединения с сервером'); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('token')) window.location.href = 'index.html';
+      document.addEventListener('keydown', e => { if (e.key === 'Enter') submitForm(); });
+    });
+  </script>
+</body>
+</html>
