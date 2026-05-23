@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class TagOut(BaseModel):
@@ -47,11 +47,18 @@ class PostListResponse(BaseModel):
 
 
 class PostCreate(BaseModel):
-    title:        Optional[str]      = None
-    content:      Optional[str]      = None
-    post_type_id: Optional[int]      = None
+    title: Optional[str] = None
+    content: Optional[str] = None
+    post_type_id: Optional[int] = None
+    tag_ids: list[int] = []
     scheduled_at: Optional[datetime] = None
-    tag_ids:      list[int]          = []
+
+    @field_validator("scheduled_at", mode="before")
+    @classmethod
+    def strip_timezone(cls, v):
+        if isinstance(v, datetime) and v.tzinfo is not None:
+            return v.replace(tzinfo=None)
+        return v
 
 
 class PostUpdate(BaseModel):
