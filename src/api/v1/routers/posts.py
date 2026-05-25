@@ -1,3 +1,7 @@
+import os
+import uuid
+from fastapi import UploadFile, File, HTTPException
+
 from datetime import datetime
 from typing import Optional, Literal
 
@@ -119,3 +123,40 @@ async def schedule_post(
     current_user = Depends(get_current_user),
 ):
     return await service.schedule_post(post_id, body.scheduled_at, current_user)
+
+
+
+
+UPLOAD_DIR = "uploads"
+ALLOWED_TYPES = {
+    "image/jpeg": ("image", ".jpg"),
+    "image/png": ("image", ".png"),
+    "image/gif": ("image", ".gif"),
+    "image/webp": ("image", ".webp"),
+    "video/mp4": ("video", ".mp4"),
+    "video/webm": ("video", ".webm"),
+}
+
+@router.post("/{post_id}/media", response_model=PostOut, summary="Загрузить медиафайл к посту")
+async def upload_media(
+    post_id: int,
+    file: UploadFile = File(...),
+    service: PostService = Depends(get_post_service),
+    current_user=Depends(get_current_user),
+):
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=400, detail="Неподдерживаемый тип файла. Разрешены: JPEG, PNG, GIF, WebP, MP4, WebM")
+
+    media_type, ext = ALLOWED_TYPES[file.content_type]
+    filename = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    contents = await file.read()
+    if len(contents) > 50 * 1024 * 1024:  # 50 MB
+        raise HTTPException(status_code=400, detail="Файл слишком большой. Максимум 50 МБ")
+
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    file_url = f"http://localhost:8000/uploads/{filename}"
+    return await service.add_media(post_id, file_url, media_type, current_user)

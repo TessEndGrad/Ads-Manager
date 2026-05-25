@@ -1,6 +1,7 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.staticfiles import StaticFiles
 from src.api.v1.routers.posts import router as posts_router
 from src.api.v1.routers.auth  import router as auth_router
 from src.api.v1.routers.users import router as users_router
@@ -19,6 +20,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 PREFIX = "/api/v1"
 app.include_router(auth_router,  prefix=PREFIX)

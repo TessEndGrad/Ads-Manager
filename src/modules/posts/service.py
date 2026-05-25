@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 
-from src.infrastructure.persistence.models.models import Post, Tag
+from src.infrastructure.persistence.models.models import Post, Tag, Media
 from src.infrastructure.persistence.repositories.post_repository import (
     PostRepository,
     PostFilters,
@@ -152,3 +152,14 @@ class PostService:
         filters = PostFilters(author_id=current_user.id, status_id=STATUS_DRAFT)
         posts, _ = await self._repo.get_list(filters, "created_at", "desc", 1, 100)
         return posts
+    
+    async def add_media(self, post_id: int, file_url: str, media_type: str, current_user) -> Post:
+        post = await self._repo.get_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        if post.author_id != current_user.id and current_user.role_id != MANAGER_ROLE_ID:
+            raise HTTPException(status_code=403, detail="Нет доступа")
+
+        media = Media(post_id=post_id, file_url=file_url, media_type=media_type)
+        self._repo._session.add(media)
+        return await self._repo.update(post)
