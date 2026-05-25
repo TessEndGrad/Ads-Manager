@@ -113,13 +113,13 @@ class PostRepository:
     async def create(self, post: Post) -> Post:
         self._session.add(post)
         await self._session.commit()
-        await self._session.refresh(post)
-        return post
+        # перезапрашиваем с eager-загрузкой всех связей
+        return await self.get_by_id(post.id)
 
     async def update(self, post: Post) -> Post:
         await self._session.commit()
-        await self._session.refresh(post)
-        return post
+        # перезапрашиваем с eager-загрузкой всех связей
+        return await self.get_by_id(post.id)
 
     async def delete(self, post: Post) -> None:
         await self._session.delete(post)
