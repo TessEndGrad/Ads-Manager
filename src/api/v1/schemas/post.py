@@ -53,7 +53,7 @@ class PostCreate(BaseModel):
     tag_ids: list[int] = []
     scheduled_at: Optional[datetime] = None
 
-    @field_validator("scheduled_at", mode="before")
+    @field_validator("scheduled_at", mode="after")
     @classmethod
     def strip_timezone(cls, v):
         if isinstance(v, datetime) and v.tzinfo is not None:
