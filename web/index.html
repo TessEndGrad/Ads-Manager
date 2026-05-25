@@ -153,38 +153,56 @@ async function renderDashboard() {
 }
 
 // ── Posts list ────────────────────────────────────────────────────────────────
-async function renderPosts(extra = {}) {
-  setActiveNav('posts');
-  const main = document.getElementById('mainContent');
-  main.innerHTML = `<div class="flex items-center justify-center h-full"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>`;
+// Состояние фильтров — вне функции
+let postFilters = { status_id: '', order_by: 'created_at' };
 
-  const params = new URLSearchParams({ page: 1, page_size: 50, order_by: 'created_at', order_dir: 'desc', ...extra });
-  const res = await apiFetch(`/posts/?${params}`);
-  if (!res) return;
-  const data = await res.json();
+async function renderPosts(extra) {
+    // Обновляем состояние если пришли новые значения
+    if (extra) Object.assign(postFilters, extra);
 
-  main.innerHTML = `
-    <div class="flex items-center justify-between mb-5">
-      <h1 class="text-2xl font-semibold">Публикации <span class="text-gray-400 text-base font-normal">(${data.total})</span></h1>
-      <div class="flex gap-3">
-        <select onchange="renderPosts({status_id:this.value||undefined})" class="border border-gray-200 rounded-xl px-3 py-2 text-sm">
-          <option value="">Все статусы</option>
-          <option value="1">Черновик</option>
-          <option value="2">На модерации</option>
-          <option value="3">Одобрен</option>
-          <option value="4">Опубликован</option>
-          <option value="5">Отклонён</option>
-        </select>
-        <select onchange="renderPosts({order_by:this.value})" class="border border-gray-200 rounded-xl px-3 py-2 text-sm">
-          <option value="created_at">По дате создания</option>
-          <option value="scheduled_at">По дате публикации</option>
-          <option value="title">По названию</option>
-          <option value="status_id">По статусу</option>
-        </select>
-      </div>
-    </div>
-    <div class="space-y-3">${data.items.length ? data.items.map(postCard).join('') : '<p class="text-gray-400">Публикаций не найдено</p>'}</div>
-  `;
+    setActiveNav('posts');
+    const main = document.getElementById('mainContent');
+    main.innerHTML = `<div class="flex items-center justify-center h-full"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>`;
+
+    const params = new URLSearchParams({ page: 1, pagesize: 50, orderby: postFilters.order_by, orderdir: 'desc' });
+    if (postFilters.status_id) params.set('status_id', postFilters.status_id);
+
+    const res = await apiFetch(`/posts?${params}`);
+    if (!res) return;
+    const data = await res.json();
+
+    // Опции статусов с нужным selected
+    const statusOptions = [
+        { value: '',  label: 'Все статусы' },
+        { value: '1', label: 'Черновик' },
+        { value: '2', label: 'На модерации' },
+        { value: '3', label: 'Одобрен' },
+        { value: '4', label: 'Опубликован' },
+        { value: '5', label: 'Отклонён' },
+    ].map(o => `<option value="${o.value}" ${postFilters.status_id === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+
+    // Опции сортировки с нужным selected
+    const orderOptions = [
+        { value: 'created_at',   label: 'По дате создания' },
+        { value: 'scheduled_at', label: 'По дате публикации' },
+        { value: 'title',        label: 'По заголовку' },
+        { value: 'status_id',    label: 'По статусу' },
+    ].map(o => `<option value="${o.value}" ${postFilters.order_by === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+
+    main.innerHTML = `
+        <div class="flex items-center justify-between mb-5">
+            <h1 class="text-2xl font-semibold">Публикации <span class="text-gray-400 text-base font-normal">${data.total}</span></h1>
+            <div class="flex gap-3">
+                <select onchange="renderPosts({status_id: this.value})" class="border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                    ${statusOptions}
+                </select>
+                <select onchange="renderPosts({order_by: this.value})" class="border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                    ${orderOptions}
+                </select>
+            </div>
+        </div>
+        <div class="space-y-3">${data.items.length ? data.items.map(postCard).join('') : '<p class="text-gray-400">Нет постов</p>'}</div>
+    `;
 }
 
 function statusBadge(statusId, statusName) {
