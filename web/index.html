@@ -304,39 +304,36 @@ async function openEditModal(id) {
 }
 
 function postForm(post, allTags) {
-  const isEdit = !!post;
-  const tagOptions = allTags.map(t =>
-    `<option value="${t.id}" ${(post?.tags||[]).some(pt=>pt.id===t.id)?'selected':''}>${t.name}</option>`
-  ).join('');
-  return `
-    <div class="p-6">
-      <h2 class="text-xl font-semibold mb-5">${isEdit ? 'Редактировать пост' : 'Новая публикация'}</h2>
+    const isEdit = !!post;
+    const tagOptions = allTags.map(t =>
+        `<option value="${t.id}" ${post?.tags.some(pt => pt.id === t.id) ? 'selected' : ''}>${t.name}</option>`
+    ).join('');
+
+    
+    const scheduledValue = post?.scheduled_at
+        ? post.scheduled_at.replace('Z', '').slice(0, 16)
+        : '';
+
+    return `<div class="p-6">
+      <h2 class="text-xl font-semibold mb-5">${isEdit ? 'Редактировать' : 'Новая публикация'}</h2>
       <div class="space-y-4">
-        <input id="fTitle" type="text" value="${post?.title||''}" placeholder="Заголовок"
-               class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
-        <textarea id="fContent" rows="5" placeholder="Текст публикации"
-               class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400 resize-none">${post?.content||''}</textarea>
+        <input id="fTitle" type="text" value="${post?.title || ''}" placeholder="Заголовок" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+        <textarea id="fContent" rows="5" placeholder="Текст" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400 resize-none">${post?.content || ''}</textarea>
         <div>
           <label class="text-sm text-gray-500 mb-1 block">Теги</label>
-          <select id="fTags" multiple class="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none">
-            ${tagOptions}
-          </select>
+          <select id="fTags" multiple class="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none">${tagOptions}</select>
           <p class="text-xs text-gray-400 mt-1">Удерживайте Ctrl для выбора нескольких</p>
         </div>
         <div>
           <label class="text-sm text-gray-500 mb-1 block">Дата публикации</label>
-          <input id="fDate" type="datetime-local" value="${post?.scheduled_at ? post.scheduled_at.slice(0,16) : ''}"
-                 class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+          <input id="fDate" type="datetime-local" value="${scheduledValue}" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
         </div>
       </div>
       <div class="flex gap-3 mt-6">
-        <button onclick="${isEdit ? `savePost(${post.id})` : 'createPost()'}" class="flex-1 btn-success">
-          ${isEdit ? 'Сохранить' : 'Создать'}
-        </button>
+        <button onclick="${isEdit ? `savePost(${post.id})` : 'createPost()'}" class="flex-1 btn-success">${isEdit ? 'Сохранить' : 'Создать'}</button>
         <button onclick="closeModal()" class="btn-secondary">Отмена</button>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 async function createPost() {
@@ -354,15 +351,20 @@ async function savePost(id) {
 }
 
 function collectPostForm() {
-  const tagSelect = document.getElementById('fTags');
-  const tagIds = tagSelect ? [...tagSelect.selectedOptions].map(o => parseInt(o.value)) : [];
-  const date = document.getElementById('fDate').value;
-  return {
-    title:        document.getElementById('fTitle').value.trim() || null,
-    content:      document.getElementById('fContent').value.trim() || null,
-    scheduled_at: date ? new Date(date).toISOString() : null,
-    tag_ids:      tagIds,
-  };
+    const tagSelect = document.getElementById('fTags');
+    const selectedOptions = [...tagSelect.selectedOptions];
+    // null = не менять теги, [] = очистить все теги
+    const tagIds = selectedOptions.length > 0
+        ? selectedOptions.map(o => parseInt(o.value))
+        : null;
+
+    const date = document.getElementById('fDate').value;
+    return {
+        title: document.getElementById('fTitle').value.trim() || null,
+        content: document.getElementById('fContent').value.trim() || null,
+        scheduled_at: date ? new Date(date).toISOString() : null,
+        tag_ids: tagIds,
+    };
 }
 
 // ── Tags page ─────────────────────────────────────────────────────────────────

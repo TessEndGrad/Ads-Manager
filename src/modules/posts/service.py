@@ -70,14 +70,24 @@ class PostService:
         if not post:
             raise HTTPException(status_code=404, detail="Пост не найден")
         if post.author_id != current_user.id and current_user.role_id != MANAGER_ROLE_ID:
-            raise HTTPException(status_code=403, detail="Доступ запрещён")
+            raise HTTPException(status_code=403, detail="Нет доступа")
         if post.status_id not in (STATUS_DRAFT, STATUS_REJECTED):
             raise HTTPException(status_code=400, detail="Редактировать можно только черновик или отклонённый пост")
 
-        if data.title is not None:      post.title        = data.title
-        if data.content is not None:    post.content      = data.content
-        if data.post_type_id is not None: post.post_type_id = data.post_type_id
-        if data.scheduled_at is not None: post.scheduled_at = data.scheduled_at
+        if data.title is not None:
+            post.title = data.title
+        if data.content is not None:
+            post.content = data.content
+        if data.post_type_id is not None:
+            post.post_type_id = data.post_type_id
+
+        
+        if data.scheduled_at is not None:
+            scheduled_at = data.scheduled_at
+            if scheduled_at.tzinfo is not None:
+                scheduled_at = scheduled_at.replace(tzinfo=None)
+            post.scheduled_at = scheduled_at
+
         if data.tag_ids is not None:
             tags = []
             for tag_id in data.tag_ids:
