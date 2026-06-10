@@ -158,5 +158,5 @@ async def upload_media(
     with open(file_path, "wb") as f:
         f.write(contents)
 
-    file_url = f"http://localhost:8000/uploads/{filename}"
+    file_url = f"/uploads/{filename}"
     return await service.add_media(post_id, file_url, media_type, current_user)
