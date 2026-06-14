@@ -48,6 +48,18 @@ services:
       api:
         condition: service_healthy   # ← ждём пока API реально готов
 
+  bot:
+    build: .
+    restart: always
+    command: python -m bot.main
+    environment:
+      - PYTHONPATH=/app
+      - BOT_TOKEN=8661937527:AAHX4IYWA7CrThHEGeq3bfl9vW8FlPWRhGQ
+      - API_BASE_URL=http://api:8000/api/v1
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   uploads_data:
