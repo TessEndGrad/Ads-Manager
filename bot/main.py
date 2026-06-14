@@ -6,7 +6,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from bot.config import bot_settings
 from bot.api_client import AdsAPIClient
 from bot.scheduler import scheduler_loop
-from bot.handlers import common, posts, moderation
+from bot.handlers import common, posts, moderation, tags
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,6 +17,7 @@ async def main():
     dp.include_router(common.router)
     dp.include_router(posts.router)
     dp.include_router(moderation.router)
+    dp.include_router(tags.router)
 
     client = AdsAPIClient(bot_settings.API_BASE_URL)
     bot_token = await client.login(

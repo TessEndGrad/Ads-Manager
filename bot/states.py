@@ -7,6 +7,11 @@ class AuthStates(StatesGroup):
 class CreatePostStates(StatesGroup):
     waiting_title   = State()
     waiting_content = State()
+    waiting_tags    = State()
+    waiting_media   = State()
 
 class RejectStates(StatesGroup):
     waiting_post_id = State()
+
+class AddTagStates(StatesGroup):
+    waiting_tag_name = State()

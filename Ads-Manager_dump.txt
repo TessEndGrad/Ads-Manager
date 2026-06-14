@@ -1,0 +1,3894 @@
+============================================================
+  ДАМП ПРОЕКТА: Ads-Manager
+  Файлов: 46
+============================================================
+
+📁 СТРУКТУРА ПРОЕКТА
+------------------------------------------------------------
+Ads-Manager/
+├── CONTRIBUTING.md
+├── README.md
+├── bot
+│   ├── api_client.py
+│   ├── config.py
+│   ├── handlers
+│   │   ├── common.py
+│   │   ├── moderation.py
+│   │   └── posts.py
+│   ├── keyboards.py
+│   ├── main.py
+│   ├── scheduler.py
+│   └── states.py
+├── docker-compose.yml
+├── requirements.txt
+├── src
+│   ├── __init__.py
+│   ├── api
+│   │   ├── main.py
+│   │   └── v1
+│   │       ├── dependencies.py
+│   │       ├── routers
+│   │       │   ├── auth.py
+│   │       │   ├── posts.py
+│   │       │   ├── tags.py
+│   │       │   ├── telegram.py
+│   │       │   └── users.py
+│   │       └── schemas
+│   │           ├── post.py
+│   │           ├── tag.py
+│   │           └── user.py
+│   ├── core
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── dependencies.py
+│   │   └── exceptions.py
+│   ├── infrastructure
+│   │   └── persistence
+│   │       ├── models
+│   │       │   ├── models.py
+│   │       │   └── post.py
+│   │       └── repositories
+│   │           ├── post_repository.py
+│   │           └── user_repository.py
+│   ├── main.py
+│   ├── modules
+│   │   ├── posts
+│   │   │   └── service.py
+│   │   └── users
+│   │       └── service.py
+│   └── scripts
+│       ├── __init__.py
+│       ├── create_superuser.py
+│       ├── init_db.py
+│       └── seed_db.py
+└── web
+    ├── css
+    │   └── style.css
+    ├── index.html
+    ├── js
+    │   ├── script.js
+    │   └── script_login.js
+    ├── login.html
+    ├── main.py
+    └── nginx.conf
+
+============================================================
+
+📄 СОДЕРЖИМОЕ ФАЙЛОВ
+============================================================
+
+CONTRIBUTING.md-------
+1. Ветки — `main`, `develop`, `feature/*`, `bugfix/*`, `hotfix/*`.
+2. Коммиты — типизированные (`feat:`, `fix:` и т.д.).
+3. Код — только через PR с ревью.
+4. Синхронизация — ребейз или мёрж перед PR.
+5. Релизы — теги на `main`.
+6. Запрещено — коммитить напрямую в main.
+
+--------------------------
+
+README.md-------
+# Adds-Manager
+Платформа для планирования рекламных кампаний
+
+
+
+# 📂 Структура проекта
+adds-manager/                        
+├── src/                              
+│   │
+│   ├── core/                         
+│   │   ├── config.py                 # Конфигурация приложения
+│   │   ├── database.py               # Настройка подключения к БД
+│   │   ├── dependencies.py           # FastAPI зависимости 
+│   │   ├── exceptions.py             # Базовые исключения приложения
+│   │   ├── events/                   # Базовые классы для работы с Domain Events
+│   │   ├── mediator.py               
+│   │   ├── logging_config.py         # Настройка логирования
+│   │   └── utils.py                  # Общие утилиты 
+│   │
+│   ├── modules/                      
+│   │   ├── posts/                    # Модуль "Посты" 
+│   │   ├── users/                    # Модуль "Пользователи" 
+│   │   ├── campaigns/                # Модуль "Кампании" (группировка постов) 
+│   │   ├── integrations/             # Модуль интеграций с внешними сервисами 
+│   │   └── notifications/            # Модуль уведомлений (о согласовании, ошибках публикации и т.д.)
+│   │
+│   ├── application/                  
+│   │   ├── event_handlers/           # Обработчики доменных событий 
+│   │   └── interfaces/               # Интерфейсы Application Layer если понадобиться
+│   │
+│   ├── domain/                       
+│   │   ├── entities/                 
+│   │   ├── events/                   
+│   │   └── value_objects/            
+│   │
+│   ├── infrastructure/               
+│   │   ├── persistence/              
+│   │   │   ├── models/               # SQLAlchemy ORM-модели 
+│   │   │   ├── repositories/         # Конкретные реализации репозиториев
+│   │   │   ├── mappings.py           # Маппинг между Domain Entities и ORM моделями
+│   │   │   └── unit_of_work.py       # Управление транзакциями
+│   │   │
+│   │   └── integrations/             # Клиенты внешних API
+│   │       ├── vk/
+│   │       ├── telegram/
+│   │       └── publishing_service.py # Сервис автопубликации постов
+│   │   
+│   │
+│   ├── api/                          
+│   │   ├── v1/                       
+│   │   │   ├── routers/              # FastAPI роутеры 
+│   │   │   ├── schemas/              # Pydantic-схемы 
+│   │   │   └── dependencies.py       
+│   │   └── main.py                   # Создание и конфигурация FastAPI приложения
+│   │
+│   ├── common/                       # Общие компоненты, не относящиеся строго к DDD-слоям
+│   │   ├── exceptions.py             # Дополнительные исключения
+│   │   ├── dto.py                    # Общие дтошки
+│   │   └── decorators.py             # Декораторы 
+│   │
+│   └── main.py                       # Точка входа приложения, запускать будет фаст апи
+│
+├── tests/                            # Автоматизированные тесты
+│   ├── unit/                         # Юнит-тесты 
+│   ├── integration/                  # Интеграционные тесты 
+│   └── e2e/                          # End-to-End тесты 
+|
+├── web/                              # Front-End
+|   
+|
+│
+├── scripts/                          
+│   ├── seed_db.py                    # Заполнение базы тестовыми данными
+│   └── create_superuser.py
+│
+├── docker-compose.yml                # Конфигурация Docker Compose
+├── Dockerfile                        # Dockerfile для FastAPI приложения
+├── requirements.txt                  # Зависимости проекта
+├── .env.example                      # Пример файла окружения
+├── .gitignore
+└── README.md
+
+--------------------------
+
+docker-compose.yml-------
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: rootroot
+      POSTGRES_DB: adsmanager
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql+asyncpg://postgres:rootroot@db:5432/adsmanager
+      - SECRET_KEY=your-super-secret-key-change-in-production
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  web:
+    build: ./web
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      api:
+        condition: service_healthy   # ← ждём пока API реально готов
+
+  bot:
+    build: .
+    restart: always
+    command: python -m bot.main
+    environment:
+      - PYTHONPATH=/app
+      - BOT_TOKEN=8661937527:AAHX4IYWA7CrThHEGeq3bfl9vW8FlPWRhGQ
+      - API_BASE_URL=http://api:8000/api/v1
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  uploads_data:
+
+--------------------------
+
+requirements.txt-------
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+sqlalchemy==2.0.30
+asyncpg==0.29.0
+alembic==1.13.1
+pydantic[email]==2.7.1
+pydantic-settings==2.2.1
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.9
+bcrypt==4.0.1
+aiogram==3.7.0
+aiohttp==3.9.5
+
+--------------------------
+
+bot\api_client.py-------
+import aiohttp
+from typing import Optional
+
+class AdsAPIClient:
+    def __init__(self, base_url: str):
+        self.base_url = base_url.rstrip("/")
+
+    async def _request(self, method: str, path: str, token: Optional[str] = None, **kwargs):
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        async with aiohttp.ClientSession() as session:
+            async with session.request(
+                method,
+                f"{self.base_url}/{path.lstrip('/')}",
+                headers=headers,
+                **kwargs
+            ) as resp:
+                if resp.content_type == "application/json":
+                    return resp.status, await resp.json()
+                return resp.status, {}
+
+    async def login(self, email: str, password: str):
+        status, data = await self._request(
+            "POST", "/auth/login",
+            json={"email": email, "password": password}
+        )
+        if status == 200:
+            return data.get("access_token")
+        return None
+
+    async def get_me(self, token: str):
+        status, data = await self._request("GET", "/users/me", token=token)
+        return data if status == 200 else None
+
+    async def get_posts(self, token: str, page: int = 1, page_size: int = 10):
+        status, data = await self._request(
+            "GET", f"/posts/?page={page}&page_size={page_size}", token=token
+        )
+        return data if status == 200 else None
+
+    async def get_post(self, token: str, post_id: int):
+        status, data = await self._request("GET", f"/posts/{post_id}", token=token)
+        return data if status == 200 else None
+
+    async def create_post(self, token: str, title: str, content: str):
+        status, data = await self._request(
+            "POST", "/posts/",
+            token=token,
+            json={"title": title, "content": content, "tag_ids": []}
+        )
+        return data if status == 201 else None
+
+    async def submit_post(self, token: str, post_id: int):
+        status, data = await self._request(
+            "POST", f"/posts/{post_id}/submit", token=token
+        )
+        return data if status == 200 else None
+
+    async def approve_post(self, token: str, post_id: int):
+        status, data = await self._request(
+            "POST", f"/posts/{post_id}/approve", token=token
+        )
+        return data if status == 200 else None
+
+    async def reject_post(self, token: str, post_id: int):
+        status, data = await self._request(
+            "POST", f"/posts/{post_id}/reject", token=token
+        )
+        return data if status == 200 else None
+
+    async def get_posts_on_moderation(self, token: str):
+        status, data = await self._request(
+            "GET", "/posts/?status_id=2&page_size=20", token=token
+        )
+        return data if status == 200 else None
+
+--------------------------
+
+bot\config.py-------
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class BotSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",
+    )
+
+    BOT_TOKEN: str
+    API_BASE_URL: str = "http://api:8000/api/v1"
+    MEDIA_BASE_URL: str = "http://api:8000"  # для построения URL медиафайлов
+    BOT_API_EMAIL: str    # email технического бота для авторизации на API
+    BOT_API_PASSWORD: str
+
+bot_settings = BotSettings()
+
+--------------------------
+
+bot\keyboards.py-------
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+
+def main_menu_user() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📋 Мои посты"), KeyboardButton(text="✏️ Создать пост")],
+            [KeyboardButton(text="📝 Мои черновики"), KeyboardButton(text="👤 Профиль")],
+        ],
+        resize_keyboard=True
+    )
+
+def main_menu_manager() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📋 Все посты"), KeyboardButton(text="✏️ Создать пост")],
+            [KeyboardButton(text="🔍 На модерации"), KeyboardButton(text="👤 Профиль")],
+        ],
+        resize_keyboard=True
+    )
+
+def post_actions(post_id: int, status_id: int, is_manager: bool) -> InlineKeyboardMarkup:
+    buttons = []
+    if status_id == 1 and not is_manager:  # draft, автор
+        buttons.append([InlineKeyboardButton(
+            text="📤 Отправить на модерацию",
+            callback_data=f"submit_{post_id}"
+        )])
+    if status_id == 2 and is_manager:  # на модерации, менеджер
+        buttons.append([
+            InlineKeyboardButton(text="✅ Одобрить", callback_data=f"approve_{post_id}"),
+            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{post_id}"),
+        ])
+    return InlineKeyboardMarkup(inline_keyboard=buttons) if buttons else None
+
+def posts_pagination(page: int, total: int, page_size: int) -> InlineKeyboardMarkup:
+    buttons = []
+    row = []
+    if page > 1:
+        row.append(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"posts_page_{page-1}"))
+    if page * page_size < total:
+        row.append(InlineKeyboardButton(text="Вперёд ➡️", callback_data=f"posts_page_{page+1}"))
+    if row:
+        buttons.append(row)
+    return InlineKeyboardMarkup(inline_keyboard=buttons) if buttons else None
+
+--------------------------
+
+bot\main.py-------
+import asyncio
+import logging
+from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
+
+from bot.config import bot_settings
+from bot.api_client import AdsAPIClient
+from bot.scheduler import scheduler_loop
+from bot.handlers import common, posts, moderation
+
+logging.basicConfig(level=logging.INFO)
+
+async def main():
+    bot = Bot(token=bot_settings.BOT_TOKEN)
+    dp = Dispatcher(storage=MemoryStorage())
+
+    dp.include_router(common.router)
+    dp.include_router(posts.router)
+    dp.include_router(moderation.router)
+
+    client = AdsAPIClient(bot_settings.API_BASE_URL)
+    bot_token = await client.login(
+        bot_settings.BOT_API_EMAIL,
+        bot_settings.BOT_API_PASSWORD
+    )
+    if not bot_token:
+        raise RuntimeError("Не удалось авторизовать бота в API")
+
+    # Запускаем планировщик параллельно с polling
+    loop = asyncio.get_event_loop()
+    loop.create_task(scheduler_loop(bot, bot_token))
+
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+--------------------------
+
+bot\scheduler.py-------
+import asyncio
+import logging
+from datetime import datetime
+
+import aiohttp
+from aiogram import Bot
+from aiogram.types import FSInputFile, InputMediaPhoto, InputMediaVideo
+
+from bot.config import bot_settings
+
+logger = logging.getLogger(__name__)
+
+
+async def fetch_pending_publications(api_token: str) -> list[dict]:
+    """Получаем все pending публикации у которых scheduled_at <= now"""
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            f"{bot_settings.API_BASE_URL}/telegram/pending",
+            headers={"Authorization": f"Bearer {api_token}"}
+        ) as resp:
+            if resp.status == 200:
+                return await resp.json()
+            return []
+
+
+async def mark_published(api_token: str, pub_id: int, success: bool, error: str = None):
+    async with aiohttp.ClientSession() as session:
+        await session.patch(
+            f"{bot_settings.API_BASE_URL}/telegram/publications/{pub_id}",
+            headers={"Authorization": f"Bearer {api_token}"},
+            json={"success": success, "error": error}
+        )
+
+
+async def publish_post(bot: Bot, publication: dict):
+    post = publication["post"]
+    chat_id = publication["chat_id"]
+
+    title   = post.get("title") or ""
+    content = post.get("content") or ""
+    media   = post.get("media_items", [])
+
+    caption = f"<b>{title}</b>\n\n{content}" if title else content
+
+    try:
+        if not media:
+            # Только текст
+            await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML")
+
+        elif len(media) == 1:
+            item = media[0]
+            file_url = f"{bot_settings.MEDIA_BASE_URL}{item['file_url']}"
+            if item["media_type"] == "image":
+                await bot.send_photo(chat_id=chat_id, photo=file_url, caption=caption, parse_mode="HTML")
+            elif item["media_type"] == "video":
+                await bot.send_video(chat_id=chat_id, video=file_url, caption=caption, parse_mode="HTML")
+
+        else:
+            # Медиагруппа
+            media_group = []
+            for i, item in enumerate(media[:10]):  # Telegram лимит — 10
+                file_url = f"{bot_settings.MEDIA_BASE_URL}{item['file_url']}"
+                cap = caption if i == 0 else None
+                if item["media_type"] == "image":
+                    media_group.append(InputMediaPhoto(media=file_url, caption=cap, parse_mode="HTML"))
+                elif item["media_type"] == "video":
+                    media_group.append(InputMediaVideo(media=file_url, caption=cap, parse_mode="HTML"))
+            await bot.send_media_group(chat_id=chat_id, media=media_group)
+
+        logger.info(f"✅ Пост {post['id']} опубликован в {chat_id}")
+        return True, None
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка публикации поста {post['id']}: {e}")
+        return False, str(e)
+
+
+async def scheduler_loop(bot: Bot, bot_api_token: str):
+    """Запускается как фоновая задача, проверяет каждые 30 секунд"""
+    logger.info("🕐 Планировщик запущен")
+    while True:
+        try:
+            publications = await fetch_pending_publications(bot_api_token)
+            for pub in publications:
+                success, error = await publish_post(bot, pub)
+                await mark_published(bot_api_token, pub["id"], success, error)
+        except Exception as e:
+            logger.error(f"Ошибка планировщика: {e}")
+        await asyncio.sleep(30)
+
+--------------------------
+
+bot\states.py-------
+from aiogram.fsm.state import State, StatesGroup
+
+class AuthStates(StatesGroup):
+    waiting_email    = State()
+    waiting_password = State()
+
+class CreatePostStates(StatesGroup):
+    waiting_title   = State()
+    waiting_content = State()
+
+class RejectStates(StatesGroup):
+    waiting_post_id = State()
+
+--------------------------
+
+bot\handlers\common.py-------
+from aiogram import Router, F
+from aiogram.types import Message
+from aiogram.filters import CommandStart, Command
+from aiogram.fsm.context import FSMContext
+
+from bot.states import AuthStates
+from bot.api_client import AdsAPIClient
+from bot.keyboards import main_menu_user, main_menu_manager
+from bot.config import bot_settings
+
+router = Router()
+client = AdsAPIClient(bot_settings.API_BASE_URL)
+
+# Хранилище токенов в памяти: {telegram_user_id: token}
+# В продакшене замените на Redis или БД
+user_tokens: dict[int, str] = {}
+user_data: dict[int, dict] = {}
+
+
+@router.message(CommandStart())
+async def cmd_start(message: Message, state: FSMContext):
+    tg_id = message.from_user.id
+    if tg_id in user_tokens:
+        me = await client.get_me(user_tokens[tg_id])
+        if me:
+            is_manager = me.get("role_id") == 1
+            kb = main_menu_manager() if is_manager else main_menu_user()
+            await message.answer(
+                f"👋 С возвращением, <b>{me['username']}</b>!", 
+                reply_markup=kb, parse_mode="HTML"
+            )
+            return
+
+    await message.answer(
+        "👋 Добро пожаловать в <b>Ads Manager</b>!\n\n"
+        "Введите ваш <b>email</b> для входа:",
+        parse_mode="HTML"
+    )
+    await state.set_state(AuthStates.waiting_email)
+
+
+@router.message(AuthStates.waiting_email)
+async def process_email(message: Message, state: FSMContext):
+    await state.update_data(email=message.text.strip())
+    await message.answer("🔐 Теперь введите <b>пароль</b>:", parse_mode="HTML")
+    await state.set_state(AuthStates.waiting_password)
+
+
+@router.message(AuthStates.waiting_password)
+async def process_password(message: Message, state: FSMContext):
+    data = await state.get_data()
+    email = data["email"]
+    password = message.text.strip()
+    await state.clear()
+
+    token = await client.login(email, password)
+    if not token:
+        await message.answer("❌ Неверный email или пароль. Попробуйте ещё раз /start")
+        return
+
+    tg_id = message.from_user.id
+    user_tokens[tg_id] = token
+
+    me = await client.get_me(token)
+    user_data[tg_id] = me
+    is_manager = me.get("role_id") == 1
+    kb = main_menu_manager() if is_manager else main_menu_user()
+
+    await message.answer(
+        f"✅ Вы вошли как <b>{me['username']}</b> "
+        f"({'Менеджер' if is_manager else 'Пользователь'})",
+        reply_markup=kb, parse_mode="HTML"
+    )
+
+
+@router.message(F.text == "👤 Профиль")
+async def profile(message: Message):
+    tg_id = message.from_user.id
+    token = user_tokens.get(tg_id)
+    if not token:
+        await message.answer("Вы не авторизованы. Введите /start")
+        return
+    me = await client.get_me(token)
+    if not me:
+        await message.answer("Не удалось получить профиль")
+        return
+    await message.answer(
+        f"👤 <b>Профиль</b>\n\n"
+        f"Имя: {me['username']}\n"
+        f"Email: {me['email']}\n"
+        f"Роль: {'Менеджер' if me['role_id'] == 1 else 'Пользователь'}",
+        parse_mode="HTML"
+    )
+
+--------------------------
+
+bot\handlers\moderation.py-------
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery
+
+from bot.api_client import AdsAPIClient
+from bot.keyboards import post_actions
+from bot.config import bot_settings
+from bot.handlers.common import user_tokens, user_data
+from bot.handlers.posts import format_post
+
+router = Router()
+client = AdsAPIClient(bot_settings.API_BASE_URL)
+
+
+@router.message(F.text == "🔍 На модерации")
+async def posts_on_moderation(message: Message):
+    tg_id = message.from_user.id
+    token = user_tokens.get(tg_id)
+    me = user_data.get(tg_id, {})
+    if not token or me.get("role_id") != 1:
+        await message.answer("❌ Доступ только для менеджеров")
+        return
+    data = await client.get_posts_on_moderation(token)
+    if not data or not data.get("items"):
+        await message.answer("🎉 Постов на модерации нет!")
+        return
+    posts = data["items"]
+    await message.answer(f"🔍 <b>На модерации: {len(posts)} постов</b>", parse_mode="HTML")
+    for p in posts:
+        kb = post_actions(p["id"], p["status_id"], is_manager=True)
+        await message.answer(format_post(p), reply_markup=kb, parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("approve_"))
+async def approve_post(callback: CallbackQuery):
+    tg_id = callback.from_user.id
+    token = user_tokens.get(tg_id)
+    me = user_data.get(tg_id, {})
+    if not token or me.get("role_id") != 1:
+        await callback.answer("❌ Нет прав")
+        return
+    post_id = int(callback.data.split("_")[1])
+    result = await client.approve_post(token, post_id)
+    if result:
+        await callback.message.edit_text(
+            f"✅ Пост одобрен!\n\n{format_post(result)}", parse_mode="HTML"
+        )
+    else:
+        await callback.answer("❌ Ошибка при одобрении")
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("reject_"))
+async def reject_post(callback: CallbackQuery):
+    tg_id = callback.from_user.id
+    token = user_tokens.get(tg_id)
+    me = user_data.get(tg_id, {})
+    if not token or me.get("role_id") != 1:
+        await callback.answer("❌ Нет прав")
+        return
+    post_id = int(callback.data.split("_")[1])
+    result = await client.reject_post(token, post_id)
+    if result:
+        await callback.message.edit_text(
+            f"❌ Пост отклонён!\n\n{format_post(result)}", parse_mode="HTML"
+        )
+    else:
+        await callback.answer("❌ Ошибка при отклонении")
+    await callback.answer()
+
+--------------------------
+
+bot\handlers\posts.py-------
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
+
+from bot.states import CreatePostStates
+from bot.api_client import AdsAPIClient
+from bot.keyboards import post_actions, posts_pagination
+from bot.config import bot_settings
+from bot.handlers.common import user_tokens, user_data
+
+router = Router()
+client = AdsAPIClient(bot_settings.API_BASE_URL)
+
+STATUS_NAMES = {1: "📝 Черновик", 2: "🔍 На модерации", 3: "✅ Одобрен", 4: "🚀 Опубликован", 5: "❌ Отклонён"}
+
+
+def format_post(post: dict) -> str:
+    status = STATUS_NAMES.get(post.get("status_id", 0), "?")
+    title = post.get("title") or "Без названия"
+    content = (post.get("content") or "")[:200]
+    return (
+        f"📌 <b>{title}</b> [ID: {post['id']}]\n"
+        f"Статус: {status}\n"
+        f"📄 {content}{'...' if len(post.get('content') or '') > 200 else ''}"
+    )
+
+
+async def send_posts_page(message: Message, token: str, page: int, is_manager: bool):
+    data = await client.get_posts(token, page=page, page_size=10)
+    if not data or not data.get("items"):
+        await message.answer("Постов не найдено.")
+        return
+    posts = data["items"]
+    total = data["total"]
+    text = f"📋 <b>Посты</b> (стр. {page}, всего {total})\n\n"
+    text += "\n\n".join(format_post(p) for p in posts)
+    kb = posts_pagination(page, total, 10)
+    await message.answer(text, reply_markup=kb, parse_mode="HTML")
+
+
+@router.message(F.text.in_(["📋 Мои посты", "📋 Все посты"]))
+async def list_posts(message: Message):
+    tg_id = message.from_user.id
+    token = user_tokens.get(tg_id)
+    if not token:
+        await message.answer("Вы не авторизованы. Введите /start")
+        return
+    me = user_data.get(tg_id, {})
+    await send_posts_page(message, token, page=1, is_manager=me.get("role_id") == 1)
+
+
+@router.callback_query(F.data.startswith("posts_page_"))
+async def paginate_posts(callback: CallbackQuery):
+    tg_id = callback.from_user.id
+    token = user_tokens.get(tg_id)
+    if not token:
+        await callback.answer("Не авторизован")
+        return
+    page = int(callback.data.split("_")[-1])
+    me = user_data.get(tg_id, {})
+    await send_posts_page(callback.message, token, page, is_manager=me.get("role_id") == 1)
+    await callback.answer()
+
+
+@router.message(F.text == "📝 Мои черновики")
+async def my_drafts(message: Message):
+    tg_id = message.from_user.id
+    token = user_tokens.get(tg_id)
+    if not token:
+        await message.answer("Вы не авторизованы. Введите /start")
+        return
+    data = await client.get_posts(token, page=1, page_size=20)
+    if not data:
+        await message.answer("Ошибка получения постов")
+        return
+    drafts = [p for p in data.get("items", []) if p.get("status_id") == 1]
+    if not drafts:
+        await message.answer("У вас нет черновиков.")
+        return
+    text = "📝 <b>Мои черновики:</b>\n\n"
+    for p in drafts:
+        kb = post_actions(p["id"], p["status_id"], is_manager=False)
+        await message.answer(format_post(p), reply_markup=kb, parse_mode="HTML")
+
+
+@router.message(F.text == "✏️ Создать пост")
+async def start_create_post(message: Message, state: FSMContext):
+    tg_id = message.from_user.id
+    if tg_id not in user_tokens:
+        await message.answer("Вы не авторизованы. Введите /start")
+        return
+    await message.answer("📝 Введите <b>заголовок</b> поста:", parse_mode="HTML")
+    await state.set_state(CreatePostStates.waiting_title)
+
+
+@router.message(CreatePostStates.waiting_title)
+async def create_post_title(message: Message, state: FSMContext):
+    await state.update_data(title=message.text.strip())
+    await message.answer("📄 Теперь введите <b>текст</b> поста:", parse_mode="HTML")
+    await state.set_state(CreatePostStates.waiting_content)
+
+
+@router.message(CreatePostStates.waiting_content)
+async def create_post_content(message: Message, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+    tg_id = message.from_user.id
+    token = user_tokens[tg_id]
+    post = await client.create_post(token, title=data["title"], content=message.text.strip())
+    if not post:
+        await message.answer("❌ Ошибка при создании поста")
+        return
+    kb = post_actions(post["id"], post["status_id"], is_manager=False)
+    await message.answer(
+        f"✅ Пост создан!\n\n{format_post(post)}",
+        reply_markup=kb, parse_mode="HTML"
+    )
+
+
+@router.callback_query(F.data.startswith("submit_"))
+async def submit_post(callback: CallbackQuery):
+    tg_id = callback.from_user.id
+    token = user_tokens.get(tg_id)
+    post_id = int(callback.data.split("_")[1])
+    result = await client.submit_post(token, post_id)
+    if result:
+        await callback.message.edit_text(
+            f"📤 Пост отправлен на модерацию!\n\n{format_post(result)}",
+            parse_mode="HTML"
+        )
+    else:
+        await callback.answer("❌ Не удалось отправить на модерацию")
+    await callback.answer()
+
+--------------------------
+
+src\__init__.py-------
+
+
+--------------------------
+
+src\main.py-------
+import uvicorn
+
+if __name__ == "__main__":
+    uvicorn.run("src.api.main:app", host="0.0.0.0", port=8000, reload=True)
+
+--------------------------
+
+src\api\main.py-------
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from src.api.v1.routers.posts import router as posts_router
+from src.api.v1.routers.auth  import router as auth_router
+from src.api.v1.routers.users import router as users_router
+from src.api.v1.routers.tags  import router as tags_router
+from src.api.v1.routers.telegram import router as telegram_router
+
+app = FastAPI(
+    title="Ads Manager API",
+    version="1.0.0",
+    description="Система планирования рекламных кампаний",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+PREFIX = "/api/v1"
+app.include_router(auth_router,  prefix=PREFIX)
+app.include_router(users_router, prefix=PREFIX)
+app.include_router(posts_router, prefix=PREFIX)
+app.include_router(tags_router,  prefix=PREFIX)
+app.include_router(telegram_router, prefix=PREFIX)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+--------------------------
+
+src\api\v1\dependencies.py-------
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.dependencies import get_db
+from src.infrastructure.persistence.repositories.post_repository import PostRepository
+from src.infrastructure.persistence.repositories.user_repository import UserRepository, TagRepository
+from src.modules.posts.service import PostService
+from src.modules.users.service import UserService
+
+
+def get_post_service(db: AsyncSession = Depends(get_db)) -> PostService:
+    return PostService(PostRepository(db), TagRepository(db))
+
+
+def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
+    return UserService(UserRepository(db))
+
+
+def get_tag_repository(db: AsyncSession = Depends(get_db)) -> TagRepository:
+    return TagRepository(db)
+
+--------------------------
+
+src\api\v1\routers\auth.py-------
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.api.v1.dependencies import get_user_service
+from src.api.v1.schemas.user import UserRegister, UserLogin, TokenResponse, UserOut
+from src.modules.users.service import UserService
+from src.infrastructure.persistence.models.models import User
+from src.core.dependencies import get_db
+
+router = APIRouter(prefix="/auth", tags=["Авторизация"])
+
+
+@router.post("/register", response_model=UserOut, status_code=201, summary="Регистрация")
+async def register(
+    data: UserRegister,
+    service: UserService = Depends(get_user_service),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await service.register(data.username, data.email, data.password)
+    result = await db.execute(
+        select(User)
+        .where(User.id == user.id)
+        .options(selectinload(User.role))
+    )
+    return result.scalar_one()
+
+
+@router.post("/login", response_model=TokenResponse, summary="Вход")
+async def login(data: UserLogin, service: UserService = Depends(get_user_service)):
+    token = await service.login(data.email, data.password)
+    return TokenResponse(access_token=token)
+
+--------------------------
+
+src\api\v1\routers\posts.py-------
+import os
+import uuid
+from fastapi import UploadFile, File, HTTPException
+
+from datetime import datetime
+from typing import Optional, Literal
+
+from fastapi import APIRouter, Depends, Query
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.dependencies import get_db, get_current_user
+from src.api.v1.dependencies import get_post_service
+from src.api.v1.schemas.post import PostOut, PostListResponse, PostCreate, PostUpdate, ScheduleRequest
+from src.infrastructure.persistence.models.models import Post
+from src.core.dependencies import get_current_user
+from src.infrastructure.persistence.repositories.post_repository import PostFilters
+from src.modules.posts.service import PostService
+from src.api.v1.schemas.post import TelegramScheduleRequest, TelegramPublicationOut
+from src.infrastructure.persistence.models.models import TelegramPublication
+
+router = APIRouter(prefix="/posts", tags=["Посты"])
+
+
+@router.get("/", response_model=PostListResponse, summary="Список постов")
+async def get_posts(
+    page:           int = Query(1, ge=1),
+    page_size:      int = Query(20, ge=1, le=100),
+    status_id:      Optional[int]  = Query(None),
+    post_type_id:   Optional[int]  = Query(None),
+    author_id:      Optional[int]  = Query(None),
+    tag_ids:        Optional[list[int]] = Query(None),
+    scheduled_from: Optional[datetime] = Query(None),
+    scheduled_to:   Optional[datetime] = Query(None),
+    created_from:   Optional[datetime] = Query(None),
+    created_to:     Optional[datetime] = Query(None),
+    search:         Optional[str]  = Query(None),
+    order_by:  Literal["created_at","updated_at","scheduled_at","title","status_id"] = Query("created_at"),
+    order_dir: Literal["asc","desc"] = Query("desc"),
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    filters = PostFilters(
+        status_id=status_id, post_type_id=post_type_id, author_id=author_id,
+        tag_ids=tag_ids or [], scheduled_from=scheduled_from, scheduled_to=scheduled_to,
+        created_from=created_from, created_to=created_to, search=search,
+    )
+    posts, total = await service.get_posts(filters, order_by, order_dir, page, page_size, current_user)
+    return PostListResponse(total=total, page=page, page_size=page_size, items=posts)
+
+
+@router.get("/my-drafts", response_model=list[PostOut], summary="Мои черновики")
+async def get_my_drafts(
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.get_my_drafts(current_user)
+
+
+@router.get("/{post_id}", response_model=PostOut, summary="Получить пост по ID")
+async def get_post(
+    post_id: int,
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.get_by_id(post_id, current_user)
+
+
+@router.post("/", response_model=PostOut, status_code=201, summary="Создать пост")
+async def create_post(
+    data: PostCreate,
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.create_post(data, current_user)
+
+
+@router.put("/{post_id}", response_model=PostOut, summary="Обновить пост")
+async def update_post(
+    post_id: int,
+    data: PostUpdate,
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.update_post(post_id, data, current_user)
+
+
+@router.delete("/{post_id}", status_code=204, summary="Удалить пост")
+async def delete_post(
+    post_id: int,
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    await service.delete_post(post_id, current_user)
+
+
+@router.post("/{post_id}/submit", response_model=PostOut, summary="Отправить на модерацию")
+async def submit_post(
+    post_id: int,
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.submit_post(post_id, current_user)
+
+
+@router.post("/{post_id}/approve", response_model=PostOut, summary="Одобрить пост")
+async def approve_post(
+    post_id: int,
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.approve_post(post_id, current_user)
+
+
+@router.post("/{post_id}/reject", response_model=PostOut, summary="Отклонить пост")
+async def reject_post(
+    post_id: int,
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.reject_post(post_id, current_user)
+
+
+@router.post("/{post_id}/schedule", response_model=PostOut, summary="Назначить дату публикации")
+async def schedule_post(
+    post_id: int,
+    body: ScheduleRequest,
+    service: PostService = Depends(get_post_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.schedule_post(post_id, body.scheduled_at, current_user)
+
+
+
+
+UPLOAD_DIR = "uploads"
+ALLOWED_TYPES = {
+    "image/jpeg": ("image", ".jpg"),
+    "image/png": ("image", ".png"),
+    "image/gif": ("image", ".gif"),
+    "image/webp": ("image", ".webp"),
+    "video/mp4": ("video", ".mp4"),
+    "video/webm": ("video", ".webm"),
+}
+
+@router.post("/{post_id}/media", response_model=PostOut, summary="Загрузить медиафайл к посту")
+async def upload_media(
+    post_id: int,
+    file: UploadFile = File(...),
+    service: PostService = Depends(get_post_service),
+    current_user=Depends(get_current_user),
+):
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=400, detail="Неподдерживаемый тип файла. Разрешены: JPEG, PNG, GIF, WebP, MP4, WebM")
+
+    media_type, ext = ALLOWED_TYPES[file.content_type]
+    filename = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    contents = await file.read()
+    if len(contents) > 50 * 1024 * 1024:  # 50 MB
+        raise HTTPException(status_code=400, detail="Файл слишком большой. Максимум 50 МБ")
+
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    file_url = f"/uploads/{filename}"
+    return await service.add_media(post_id, file_url, media_type, current_user)
+
+
+@router.post(
+    "/{post_id}/schedule-telegram",
+    response_model=TelegramPublicationOut,
+    status_code=201,
+    summary="Запланировать публикацию в Telegram"
+)
+async def schedule_telegram(
+    post_id: int,
+    body: TelegramScheduleRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    # Проверяем что пост существует и одобрен
+    result = await db.execute(select(Post).where(Post.id == post_id))
+    post = result.scalars().first()
+    if not post:
+        raise HTTPException(404, "Пост не найден")
+    if post.status_id != 3:  # STATUS_APPROVED
+        raise HTTPException(400, "Публиковать можно только одобренные посты")
+    if post.author_id != current_user.id and current_user.role_id != 1:
+        raise HTTPException(403, "Нет доступа")
+
+    scheduled_at = body.scheduled_at
+    if scheduled_at.tzinfo is not None:
+        scheduled_at = scheduled_at.replace(tzinfo=None)
+
+    pub = TelegramPublication(
+        post_id=post_id,
+        chat_id=body.chat_id,
+        scheduled_at=scheduled_at,
+        status="pending"
+    )
+    db.add(pub)
+    await db.commit()
+    await db.refresh(pub)
+    return pub
+
+
+@router.get(
+    "/{post_id}/telegram-status",
+    response_model=list[TelegramPublicationOut],
+    summary="Статус публикаций в Telegram"
+)
+async def telegram_status(
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(TelegramPublication).where(TelegramPublication.post_id == post_id)
+    )
+    return result.scalars().all()
+
+--------------------------
+
+src\api\v1\routers\tags.py-------
+from fastapi import APIRouter, Depends
+
+from src.api.v1.dependencies import get_tag_repository
+from src.api.v1.schemas.tag import TagOut, TagCreate, PopularTagOut
+from src.core.dependencies import get_current_user
+from src.infrastructure.persistence.models.models import Tag
+from src.infrastructure.persistence.repositories.user_repository import TagRepository
+
+router = APIRouter(prefix="/tags", tags=["Теги"])
+
+
+@router.get("/", response_model=list[PopularTagOut], summary="Популярные теги")
+async def get_tags(
+    limit: int = 10,
+    repo: TagRepository = Depends(get_tag_repository),
+    current_user = Depends(get_current_user),
+):
+    rows = await repo.get_popular(limit)
+    return [PopularTagOut(id=tag.id, name=tag.name, posts_count=count) for tag, count in rows]
+
+
+@router.post("/", response_model=TagOut, status_code=201, summary="Создать тег")
+async def create_tag(
+    data: TagCreate,
+    repo: TagRepository = Depends(get_tag_repository),
+    current_user = Depends(get_current_user),
+):
+    existing = await repo.get_by_name(data.name)
+    if existing:
+        return existing
+    tag = Tag(name=data.name)
+    return await repo.create(tag)
+
+--------------------------
+
+src\api\v1\routers\telegram.py-------
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+
+from src.core.dependencies import get_db, get_current_user
+from src.infrastructure.persistence.models.models import TelegramPublication, Post
+
+router = APIRouter(prefix="/telegram", tags=["Telegram"])
+
+
+@router.get("/pending")
+async def get_pending_publications(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Возвращает pending публикации у которых время наступило"""
+    now = datetime.utcnow()
+    result = await db.execute(
+        select(TelegramPublication)
+        .where(
+            TelegramPublication.status == "pending",
+            TelegramPublication.scheduled_at <= now,
+        )
+        .options(
+            selectinload(TelegramPublication.post).selectinload(Post.media_items)
+        )
+    )
+    publications = result.scalars().all()
+    return [
+        {
+            "id": p.id,
+            "chat_id": p.chat_id,
+            "post": {
+                "id": p.post.id,
+                "title": p.post.title,
+                "content": p.post.content,
+                "media_items": [
+                    {"file_url": m.file_url, "media_type": m.media_type}
+                    for m in p.post.media_items
+                ],
+            }
+        }
+        for p in publications
+    ]
+
+
+@router.patch("/publications/{pub_id}")
+async def mark_publication(
+    pub_id: int,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(TelegramPublication).where(TelegramPublication.id == pub_id)
+    )
+    pub = result.scalars().first()
+    if not pub:
+        return {"ok": False}
+    if body.get("success"):
+        pub.status = "done"
+        pub.published_at = datetime.utcnow()
+    else:
+        pub.status = "failed"
+        pub.error = body.get("error")
+    await db.commit()
+    return {"ok": True}
+
+--------------------------
+
+src\api\v1\routers\users.py-------
+from fastapi import APIRouter, Depends
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+
+from src.api.v1.dependencies import get_user_service
+from src.api.v1.schemas.user import UserOut
+from src.core.dependencies import get_current_user, get_db
+from src.modules.users.service import UserService
+from src.infrastructure.persistence.models.models import User
+
+router = APIRouter(prefix="/users", tags=["Пользователи"])
+
+
+@router.get("/me", response_model=UserOut, summary="Мой профиль")
+async def get_me(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(User)
+        .where(User.id == current_user.id)
+        .options(selectinload(User.role))
+    )
+    return result.scalar_one()
+
+
+@router.get("/{user_id}", response_model=UserOut, summary="Пользователь по ID")
+async def get_user(
+    user_id: int,
+    service: UserService = Depends(get_user_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.get_by_id(user_id)
+
+
+@router.get("/", response_model=list[UserOut], summary="Все пользователи (админ)")
+async def get_users(
+    service: UserService = Depends(get_user_service),
+    current_user = Depends(get_current_user),
+):
+    return await service.get_all(current_user)
+
+--------------------------
+
+src\api\v1\schemas\post.py-------
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, field_validator, ConfigDict
+
+
+class TagOut(BaseModel):
+    id:   int
+    name: str
+    model_config = {"from_attributes": True}
+
+
+class MediaOut(BaseModel):
+    id:         int
+    file_url:   str
+    media_type: str
+    created_at: Optional[datetime] = None
+    model_config = {"from_attributes": True}
+
+
+class StatusOut(BaseModel):
+    id:   int
+    name: str
+    model_config = {"from_attributes": True}
+
+
+class PostOut(BaseModel):
+    id:           int
+    title:        Optional[str]      = None
+    content:      Optional[str]      = None
+    author_id:    int
+    post_type_id: Optional[int]      = None
+    status_id:    int
+    status:       Optional[StatusOut]= None
+    scheduled_at: Optional[datetime] = None
+    created_at:   Optional[datetime] = None
+    updated_at:   Optional[datetime] = None
+    tags:         list[TagOut]        = []
+    media_items:  list[MediaOut]      = []
+    model_config = {"from_attributes": True}
+
+
+class PostListResponse(BaseModel):
+    total:     int
+    page:      int
+    page_size: int
+    items:     list[PostOut]
+
+
+class PostCreate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    post_type_id: Optional[int] = None
+    tag_ids: list[int] = []
+    scheduled_at: Optional[datetime] = None
+
+    @field_validator("scheduled_at", mode="after")
+    @classmethod
+    def strip_timezone(cls, v):
+        if isinstance(v, datetime) and v.tzinfo is not None:
+            return v.replace(tzinfo=None)
+        return v
+
+
+class PostUpdate(BaseModel):
+    title:        Optional[str]      = None
+    content:      Optional[str]      = None
+    post_type_id: Optional[int]      = None
+    scheduled_at: Optional[datetime] = None
+    tag_ids:      Optional[list[int]]= None
+
+
+class ScheduleRequest(BaseModel):
+    scheduled_at: datetime
+
+class TelegramScheduleRequest(BaseModel):
+    chat_id: str         # например "-1001234567890"
+    scheduled_at: datetime
+
+class TelegramPublicationOut(BaseModel):
+    id: int
+    post_id: int
+    chat_id: str
+    scheduled_at: datetime
+    published_at: Optional[datetime] = None
+    status: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+--------------------------
+
+src\api\v1\schemas\tag.py-------
+from pydantic import BaseModel
+
+
+class TagCreate(BaseModel):
+    name: str
+
+
+class TagOut(BaseModel):
+    id:   int
+    name: str
+    model_config = {"from_attributes": True}
+
+
+class PopularTagOut(BaseModel):
+    id:          int
+    name:        str
+    posts_count: int
+    model_config = {"from_attributes": True}
+
+--------------------------
+
+src\api\v1\schemas\user.py-------
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, EmailStr
+
+
+class UserRegister(BaseModel):
+    username: str
+    email:    EmailStr
+    password: str
+
+
+class UserLogin(BaseModel):
+    email:    EmailStr
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type:   str = "bearer"
+
+
+class RoleOut(BaseModel):
+    id:   int
+    name: str
+    model_config = {"from_attributes": True}
+
+
+class UserOut(BaseModel):
+    id:         int
+    username:   str
+    email:      str
+    role_id:    int
+    role:       Optional[RoleOut] = None
+    created_at: Optional[datetime] = None
+    model_config = {"from_attributes": True}
+
+--------------------------
+
+src\core\config.py-------
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/ads_manager"
+    SECRET_KEY: str = "your-super-secret-key-change-in-production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    BOT_TOKEN: str = ""
+
+    class Config:
+        env_file = ".env"
+
+
+settings = Settings()
+
+--------------------------
+
+src\core\database.py-------
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.orm import DeclarativeBase
+
+from src.core.config import settings
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+)
+
+async_session_maker = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
+
+--------------------------
+
+src\core\dependencies.py-------
+from typing import AsyncGenerator
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.config import settings
+from src.core.database import async_session_maker
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_maker() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Не удалось проверить токен",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    from src.infrastructure.persistence.models.models import User
+    from sqlalchemy import select
+    result = await db.execute(select(User).where(User.id == int(user_id)))
+    user = result.scalars().first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+--------------------------
+
+src\core\exceptions.py-------
+from fastapi import HTTPException, status
+
+
+class NotFoundException(HTTPException):
+    def __init__(self, detail: str = "Объект не найден"):
+        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+
+
+class ForbiddenException(HTTPException):
+    def __init__(self, detail: str = "Доступ запрещён"):
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+
+
+class BadRequestException(HTTPException):
+    def __init__(self, detail: str = "Некорректный запрос"):
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+
+class UnauthorizedException(HTTPException):
+    def __init__(self, detail: str = "Не авторизован"):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+--------------------------
+
+src\infrastructure\persistence\models\models.py-------
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Optional, List
+
+from sqlalchemy import (
+    String, Text, Integer, Boolean,
+    ForeignKey, Table, DateTime, func, Column,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from src.core.database import Base
+
+
+post_tags_table = Table(
+    "post_tags",
+    Base.metadata,
+    Column("post_id", Integer, ForeignKey("posts.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id",  Integer, ForeignKey("tags.id",  ondelete="CASCADE"), primary_key=True),
+)
+
+
+class Role(Base):
+    __tablename__ = "roles"
+
+    id:   Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+
+    users: Mapped[List["User"]] = relationship(back_populates="role")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id:            Mapped[int]      = mapped_column(Integer, primary_key=True)
+    username:      Mapped[str]      = mapped_column(String(100), unique=True, nullable=False)
+    email:         Mapped[str]      = mapped_column(String(150), unique=True, nullable=False)
+    password_hash: Mapped[str]      = mapped_column(Text, nullable=False)
+    role_id:       Mapped[int]      = mapped_column(ForeignKey("roles.id"), nullable=False)
+    created_at:    Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+
+    role:            Mapped["Role"]              = relationship(back_populates="users")
+    social_accounts: Mapped[List["SocialAccount"]] = relationship(back_populates="user")
+    posts:           Mapped[List["Post"]]          = relationship(back_populates="author")
+    approvals_given: Mapped[List["Approval"]]      = relationship(back_populates="manager")
+
+
+class SocialAccount(Base):
+    __tablename__ = "social_accounts"
+
+    id:            Mapped[int]            = mapped_column(Integer, primary_key=True)
+    user_id:       Mapped[int]            = mapped_column(ForeignKey("users.id"), nullable=False)
+    platform:      Mapped[str]            = mapped_column(String(50), nullable=False)
+    account_name:  Mapped[Optional[str]]  = mapped_column(String(150))
+    access_token:  Mapped[str]            = mapped_column(Text, nullable=False)
+    refresh_token: Mapped[Optional[str]]  = mapped_column(Text)
+    expires_at:    Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at:    Mapped[datetime]       = mapped_column(DateTime, server_default=func.current_timestamp())
+
+    user:         Mapped["User"]              = relationship(back_populates="social_accounts")
+    publications: Mapped[List["Publication"]] = relationship(back_populates="social_account")
+
+    @property
+    def is_token_expired(self) -> bool:
+        return self.expires_at is not None and self.expires_at <= datetime.utcnow()
+
+
+class PostType(Base):
+    __tablename__ = "post_types"
+
+    id:   Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+
+    posts: Mapped[List["Post"]] = relationship(back_populates="post_type")
+
+
+class PostStatus(Base):
+    __tablename__ = "post_statuses"
+
+    id:   Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+
+    posts: Mapped[List["Post"]] = relationship(back_populates="status")
+
+
+class Post(Base):
+    __tablename__ = "posts"
+
+    id:           Mapped[int]            = mapped_column(Integer, primary_key=True)
+    title:        Mapped[Optional[str]]  = mapped_column(String(255))
+    content:      Mapped[Optional[str]]  = mapped_column(Text)
+    author_id:    Mapped[int]            = mapped_column(ForeignKey("users.id"), nullable=False)
+    post_type_id: Mapped[Optional[int]]  = mapped_column(ForeignKey("post_types.id"))
+    status_id:    Mapped[int]            = mapped_column(ForeignKey("post_statuses.id"), nullable=False)
+    scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at:   Mapped[datetime]       = mapped_column(DateTime, server_default=func.current_timestamp())
+    updated_at:   Mapped[datetime]       = mapped_column(
+        DateTime,
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
+
+    author:      Mapped["User"]              = relationship(back_populates="posts")
+    post_type:   Mapped[Optional["PostType"]]= relationship(back_populates="posts")
+    status:      Mapped["PostStatus"]        = relationship(back_populates="posts")
+    media_items: Mapped[List["Media"]]       = relationship(back_populates="post", cascade="all, delete-orphan")
+    tags:        Mapped[List["Tag"]]         = relationship(secondary=post_tags_table, back_populates="posts")
+    publications:Mapped[List["Publication"]] = relationship(back_populates="post", cascade="all, delete-orphan")
+    approvals:   Mapped[List["Approval"]]    = relationship(back_populates="post", cascade="all, delete-orphan")
+    telegram_publications: Mapped[list["TelegramPublication"]] = relationship(back_populates="post", cascade="all, delete-orphan")
+
+
+class Media(Base):
+    __tablename__ = "media"
+
+    id:         Mapped[int]      = mapped_column(Integer, primary_key=True)
+    post_id:    Mapped[int]      = mapped_column(ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    file_url:   Mapped[str]      = mapped_column(Text, nullable=False)
+    media_type: Mapped[str]      = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+
+    post: Mapped["Post"] = relationship(back_populates="media_items")
+
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id:   Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+
+    posts: Mapped[List["Post"]] = relationship(secondary=post_tags_table, back_populates="tags")
+
+
+class Publication(Base):
+    __tablename__ = "publications"
+
+    id:                Mapped[int]           = mapped_column(Integer, primary_key=True)
+    post_id:           Mapped[int]           = mapped_column(ForeignKey("posts.id"), nullable=False)
+    social_account_id: Mapped[int]           = mapped_column(ForeignKey("social_accounts.id"), nullable=False)
+    published_at:      Mapped[Optional[datetime]] = mapped_column(DateTime)
+    status:            Mapped[Optional[str]] = mapped_column(String(50))
+    response:          Mapped[Optional[str]] = mapped_column(Text)
+
+    post:           Mapped["Post"]          = relationship(back_populates="publications")
+    social_account: Mapped["SocialAccount"] = relationship(back_populates="publications")
+
+
+class Approval(Base):
+    __tablename__ = "approvals"
+
+    id:         Mapped[int]          = mapped_column(Integer, primary_key=True)
+    post_id:    Mapped[int]          = mapped_column(ForeignKey("posts.id"), nullable=False)
+    manager_id: Mapped[int]          = mapped_column(ForeignKey("users.id"), nullable=False)
+    approved:   Mapped[bool]         = mapped_column(Boolean, nullable=False)
+    comment:    Mapped[Optional[str]]= mapped_column(Text)
+    created_at: Mapped[datetime]     = mapped_column(DateTime, server_default=func.current_timestamp())
+
+    post:    Mapped["Post"] = relationship(back_populates="approvals")
+    manager: Mapped["User"] = relationship(back_populates="approvals_given")
+
+
+class TelegramPublication(Base):
+    __tablename__ = "telegram_publications"
+
+    id:           Mapped[int]      = mapped_column(Integer, primary_key=True)
+    post_id:      Mapped[int]      = mapped_column(ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    chat_id:      Mapped[str]      = mapped_column(String(100), nullable=False)  # ID группы
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    status:       Mapped[str]      = mapped_column(String(20), default="pending")  # pending / done / failed
+    error:        Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    post: Mapped["Post"] = relationship(back_populates="telegram_publications")
+
+--------------------------
+
+src\infrastructure\persistence\models\post.py-------
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
+
+
+class TagOut(BaseModel):
+    id: int
+    name: str
+
+    model_config = {"from_attributes": True}
+
+
+class MediaOut(BaseModel):
+    id: int
+    file_url: str
+    media_type: str
+    created_at: Optional[datetime]
+
+    model_config = {"from_attributes": True}
+
+
+class PostOut(BaseModel):
+    id: int
+    title: Optional[str]
+    content: Optional[str]
+    author_id: int
+    post_type_id: Optional[int]
+    status_id: int
+    scheduled_at: Optional[datetime]
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+    tags: list[TagOut] = []
+    media: list[MediaOut] = []
+
+    model_config = {"from_attributes": True}
+
+
+class PostListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[PostOut]
+
+--------------------------
+
+src\infrastructure\persistence\repositories\post_repository.py-------
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import select, func, asc, desc, Column
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from src.infrastructure.persistence.models.models import Post, post_tags_table
+
+
+@dataclass
+class PostFilters:
+    status_id:      Optional[int]      = None
+    post_type_id:   Optional[int]      = None
+    author_id:      Optional[int]      = None
+    tag_ids:        list[int]          = field(default_factory=list)
+    scheduled_from: Optional[datetime] = None
+    scheduled_to:   Optional[datetime] = None
+    created_from:   Optional[datetime] = None
+    created_to:     Optional[datetime] = None
+    search:         Optional[str]      = None
+
+
+SORTABLE_FIELDS: dict = {
+    "created_at":   Post.created_at,
+    "updated_at":   Post.updated_at,
+    "scheduled_at": Post.scheduled_at,
+    "title":        Post.title,
+    "status_id":    Post.status_id,
+}
+
+
+class PostRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def get_list(
+        self,
+        filters: PostFilters,
+        order_by: str = "created_at",
+        order_dir: str = "desc",
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[Post], int]:
+        query = (
+            select(Post)
+            .options(
+                selectinload(Post.tags),
+                selectinload(Post.media_items),
+                selectinload(Post.status),
+                selectinload(Post.post_type),
+            )
+        )
+
+        if filters.status_id is not None:
+            query = query.where(Post.status_id == filters.status_id)
+        if filters.post_type_id is not None:
+            query = query.where(Post.post_type_id == filters.post_type_id)
+        if filters.author_id is not None:
+            query = query.where(Post.author_id == filters.author_id)
+        if filters.search:
+            pattern = f"%{filters.search}%"
+            query = query.where(Post.title.ilike(pattern) | Post.content.ilike(pattern))
+        if filters.scheduled_from:
+            query = query.where(Post.scheduled_at >= filters.scheduled_from)
+        if filters.scheduled_to:
+            query = query.where(Post.scheduled_at <= filters.scheduled_to)
+        if filters.created_from:
+            query = query.where(Post.created_at >= filters.created_from)
+        if filters.created_to:
+            query = query.where(Post.created_at <= filters.created_to)
+
+        for tag_id in filters.tag_ids:
+            query = query.where(
+                Post.id.in_(
+                    select(post_tags_table.c.post_id).where(
+                        post_tags_table.c.tag_id == tag_id
+                    )
+                )
+            )
+
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await self._session.execute(count_query)
+        total: int = total_result.scalar_one()
+
+        sort_col = SORTABLE_FIELDS.get(order_by, Post.created_at)
+        sort_expr = asc(sort_col) if order_dir == "asc" else desc(sort_col)
+        query = query.order_by(sort_expr)
+
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size)
+
+        result = await self._session.execute(query)
+        posts = list(result.scalars().unique().all())
+        return posts, total
+
+    async def get_by_id(self, post_id: int) -> Optional[Post]:
+        query = (
+            select(Post)
+            .where(Post.id == post_id)
+            .options(
+                selectinload(Post.tags),
+                selectinload(Post.media_items),
+                selectinload(Post.status),
+                selectinload(Post.post_type),
+                selectinload(Post.approvals),
+            )
+        )
+        result = await self._session.execute(query)
+        return result.scalars().first()
+
+    async def create(self, post: Post) -> Post:
+        self._session.add(post)
+        await self._session.commit()
+        # перезапрашиваем с eager-загрузкой всех связей
+        return await self.get_by_id(post.id)
+
+    async def update(self, post: Post) -> Post:
+        await self._session.commit()
+        # перезапрашиваем с eager-загрузкой всех связей
+        return await self.get_by_id(post.id)
+
+    async def delete(self, post: Post) -> None:
+        await self._session.delete(post)
+        await self._session.commit()
+
+--------------------------
+
+src\infrastructure\persistence\repositories\user_repository.py-------
+from typing import Optional
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from src.infrastructure.persistence.models.models import User, Tag, post_tags_table
+from sqlalchemy import func, desc
+
+
+class UserRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def get_by_id(self, user_id: int) -> Optional[User]:
+        result = await self._session.execute(
+            select(User).where(User.id == user_id).options(selectinload(User.role))
+        )
+        return result.scalars().first()
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        result = await self._session.execute(
+            select(User).where(User.email == email).options(selectinload(User.role))
+        )
+        return result.scalars().first()
+
+    async def get_by_username(self, username: str) -> Optional[User]:
+        result = await self._session.execute(
+            select(User).where(User.username == username)
+        )
+        return result.scalars().first()
+
+    async def create(self, user: User) -> User:
+        self._session.add(user)
+        await self._session.commit()
+        await self._session.refresh(user)
+        return user
+
+    async def get_all(self) -> list[User]:
+        result = await self._session.execute(
+            select(User).options(selectinload(User.role))
+        )
+        return list(result.scalars().all())
+
+
+class TagRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def get_all(self) -> list[Tag]:
+        result = await self._session.execute(select(Tag))
+        return list(result.scalars().all())
+
+    async def get_by_id(self, tag_id: int) -> Optional[Tag]:
+        result = await self._session.execute(select(Tag).where(Tag.id == tag_id))
+        return result.scalars().first()
+
+    async def get_by_name(self, name: str) -> Optional[Tag]:
+        result = await self._session.execute(select(Tag).where(Tag.name == name))
+        return result.scalars().first()
+
+    async def create(self, tag: Tag) -> Tag:
+        self._session.add(tag)
+        await self._session.commit()
+        await self._session.refresh(tag)
+        return tag
+
+    async def get_popular(self, limit: int = 10):
+        from src.infrastructure.persistence.models.models import post_tags_table as ptt
+        stmt = (
+            select(Tag, func.count(ptt.c.post_id).label("posts_count"))
+            .outerjoin(ptt, Tag.id == ptt.c.tag_id)
+            .group_by(Tag.id)
+            .order_by(desc("posts_count"))
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return result.all()
+
+--------------------------
+
+src\modules\posts\service.py-------
+from datetime import datetime
+from typing import Optional
+
+from fastapi import HTTPException, status
+
+from src.infrastructure.persistence.models.models import Post, Tag, Media
+from src.infrastructure.persistence.repositories.post_repository import (
+    PostRepository,
+    PostFilters,
+)
+from src.infrastructure.persistence.repositories.user_repository import TagRepository
+
+# ID статусов в БД (seed_db.py заполняет в таком порядке)
+STATUS_DRAFT      = 1
+STATUS_MODERATION = 2
+STATUS_APPROVED   = 3
+STATUS_PUBLISHED  = 4
+STATUS_REJECTED   = 5
+
+MANAGER_ROLE_ID = 1  # role_id=1 — менеджер/админ
+
+
+class PostService:
+    def __init__(self, repo: PostRepository, tag_repo: TagRepository) -> None:
+        self._repo     = repo
+        self._tag_repo = tag_repo
+
+    async def get_posts(
+        self,
+        filters: PostFilters,
+        order_by: str,
+        order_dir: str,
+        page: int,
+        page_size: int,
+        current_user,
+    ) -> tuple[list[Post], int]:
+        # Обычный пользователь видит только свои посты
+        if current_user.role_id != MANAGER_ROLE_ID:
+            filters.author_id = current_user.id
+        return await self._repo.get_list(filters, order_by, order_dir, page, page_size)
+
+    async def get_by_id(self, post_id: int, current_user) -> Post:
+        post = await self._repo.get_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        if current_user.role_id != MANAGER_ROLE_ID and post.author_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Доступ запрещён")
+        return post
+
+    async def create_post(self, data, current_user) -> Post:
+        tags = []
+        for tag_id in data.tag_ids:
+            tag = await self._tag_repo.get_by_id(tag_id)
+            if tag:
+                tags.append(tag)
+
+        post = Post(
+            title=data.title,
+            content=data.content,
+            author_id=current_user.id,
+            post_type_id=data.post_type_id,
+            status_id=STATUS_DRAFT,
+            scheduled_at=data.scheduled_at,
+        )
+        post.tags = tags
+        return await self._repo.create(post)
+
+    async def update_post(self, post_id: int, data, current_user) -> Post:
+        post = await self._repo.get_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        if post.author_id != current_user.id and current_user.role_id != MANAGER_ROLE_ID:
+            raise HTTPException(status_code=403, detail="Нет доступа")
+        if post.status_id not in (STATUS_DRAFT, STATUS_REJECTED):
+            raise HTTPException(status_code=400, detail="Редактировать можно только черновик или отклонённый пост")
+
+        if data.title is not None:
+            post.title = data.title
+        if data.content is not None:
+            post.content = data.content
+        if data.post_type_id is not None:
+            post.post_type_id = data.post_type_id
+
+        
+        if data.scheduled_at is not None:
+            scheduled_at = data.scheduled_at
+            if scheduled_at.tzinfo is not None:
+                scheduled_at = scheduled_at.replace(tzinfo=None)
+            post.scheduled_at = scheduled_at
+
+        if data.tag_ids is not None:
+            tags = []
+            for tag_id in data.tag_ids:
+                tag = await self._tag_repo.get_by_id(tag_id)
+                if tag:
+                    tags.append(tag)
+            post.tags = tags
+
+        return await self._repo.update(post)
+
+    async def delete_post(self, post_id: int, current_user) -> None:
+        post = await self._repo.get_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        if post.author_id != current_user.id and current_user.role_id != MANAGER_ROLE_ID:
+            raise HTTPException(status_code=403, detail="Доступ запрещён")
+        await self._repo.delete(post)
+
+    async def submit_post(self, post_id: int, current_user) -> Post:
+        post = await self._repo.get_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        if post.author_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Доступ запрещён")
+        if post.status_id != STATUS_DRAFT:
+            raise HTTPException(status_code=400, detail="Только черновик можно отправить на модерацию")
+        post.status_id = STATUS_MODERATION
+        return await self._repo.update(post)
+
+    async def approve_post(self, post_id: int, current_user) -> Post:
+        if current_user.role_id != MANAGER_ROLE_ID:
+            raise HTTPException(status_code=403, detail="Только менеджер может одобрять посты")
+        post = await self._repo.get_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        if post.status_id != STATUS_MODERATION:
+            raise HTTPException(status_code=400, detail="Пост не на модерации")
+        post.status_id = STATUS_APPROVED
+        return await self._repo.update(post)
+
+    async def reject_post(self, post_id: int, current_user) -> Post:
+        if current_user.role_id != MANAGER_ROLE_ID:
+            raise HTTPException(status_code=403, detail="Только менеджер может отклонять посты")
+        post = await self._repo.get_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        if post.status_id != STATUS_MODERATION:
+            raise HTTPException(status_code=400, detail="Пост не на модерации")
+        post.status_id = STATUS_REJECTED
+        return await self._repo.update(post)
+
+    async def schedule_post(self, post_id: int, scheduled_at: datetime, current_user) -> Post:
+        post = await self._repo.get_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        if post.author_id != current_user.id and current_user.role_id != MANAGER_ROLE_ID:
+            raise HTTPException(status_code=403, detail="Доступ запрещён")
+        post.scheduled_at = scheduled_at
+        return await self._repo.update(post)
+
+    async def get_my_drafts(self, current_user) -> list[Post]:
+        filters = PostFilters(author_id=current_user.id, status_id=STATUS_DRAFT)
+        posts, _ = await self._repo.get_list(filters, "created_at", "desc", 1, 100)
+        return posts
+    
+    async def add_media(self, post_id: int, file_url: str, media_type: str, current_user) -> Post:
+        post = await self._repo.get_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        if post.author_id != current_user.id and current_user.role_id != MANAGER_ROLE_ID:
+            raise HTTPException(status_code=403, detail="Нет доступа")
+
+        media = Media(post_id=post_id, file_url=file_url, media_type=media_type)
+        self._repo._session.add(media)
+        return await self._repo.update(post)
+
+--------------------------
+
+src\modules\users\service.py-------
+from datetime import datetime, timedelta
+
+from fastapi import HTTPException
+from jose import jwt
+from passlib.context import CryptContext
+
+from src.core.config import settings
+from src.infrastructure.persistence.models.models import User
+from src.infrastructure.persistence.repositories.user_repository import UserRepository
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+DEFAULT_ROLE_ID = 2  # обычный пользователь
+
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
+
+def create_access_token(user_id: int) -> str:
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return jwt.encode({"sub": str(user_id), "exp": expire}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+class UserService:
+    def __init__(self, repo: UserRepository) -> None:
+        self._repo = repo
+
+    async def register(self, username: str, email: str, password: str) -> User:
+        if await self._repo.get_by_email(email):
+            raise HTTPException(status_code=400, detail="Email уже занят")
+        if await self._repo.get_by_username(username):
+            raise HTTPException(status_code=400, detail="Имя пользователя уже занято")
+        user = User(
+            username=username,
+            email=email,
+            password_hash=hash_password(password),
+            role_id=DEFAULT_ROLE_ID,
+        )
+        return await self._repo.create(user)
+
+    async def login(self, email: str, password: str) -> str:
+        user = await self._repo.get_by_email(email)
+        if not user or not verify_password(password, user.password_hash):
+            raise HTTPException(status_code=401, detail="Неверный email или пароль")
+        return create_access_token(user.id)
+
+    async def get_me(self, current_user) -> User:
+        return current_user
+
+    async def get_by_id(self, user_id: int) -> User:
+        user = await self._repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        return user
+
+    async def get_all(self, current_user) -> list[User]:
+        if current_user.role_id != 1:
+            raise HTTPException(status_code=403, detail="Только администратор")
+        return await self._repo.get_all()
+
+--------------------------
+
+src\scripts\__init__.py-------
+
+
+--------------------------
+
+src\scripts\create_superuser.py-------
+"""
+Создаёт суперпользователя (менеджера).
+Запуск: python -m src.scripts.create_superuser
+"""
+import asyncio
+from src.core.database import async_session_maker
+from src.infrastructure.persistence.models.models import User
+from passlib.context import CryptContext
+
+pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+async def main():
+    username = input("Username: ")
+    email    = input("Email: ")
+    password = input("Password: ")
+
+    async with async_session_maker() as db:
+        user = User(
+            username=username,
+            email=email,
+            password_hash=pwd.hash(password),
+            role_id=1,
+        )
+        db.add(user)
+        await db.commit()
+        print(f"Superuser '{username}' created!")
+
+
+asyncio.run(main())
+
+--------------------------
+
+src\scripts\init_db.py-------
+"""
+Инициализация таблиц в БД (альтернатива alembic для быстрого старта).
+Запуск: python -m src.scripts.init_db
+"""
+import asyncio
+from src.core.database import engine, Base
+import src.infrastructure.persistence.models.models  # noqa: side effect — registers all models
+
+
+async def main():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    print("Tables created!")
+
+asyncio.run(main())
+
+--------------------------
+
+src\scripts\seed_db.py-------
+import asyncio
+from sqlalchemy import select
+from src.core.database import engine, Base, async_session_maker
+from src.infrastructure.persistence.models.models import Role, PostStatus, PostType, User
+from passlib.context import CryptContext
+
+pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+async def seed():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with async_session_maker() as db:
+        # Roles
+        for name in ["manager", "user"]:
+            exists = await db.execute(select(Role).where(Role.name == name))
+            if not exists.scalars().first():
+                db.add(Role(name=name))
+        await db.commit()
+
+        # Post statuses
+        for name in ["draft", "moderation", "approved", "published", "rejected"]:
+            exists = await db.execute(select(PostStatus).where(PostStatus.name == name))
+            if not exists.scalars().first():
+                db.add(PostStatus(name=name))
+        await db.commit()
+
+        # Post types
+        for name in ["image", "video", "text"]:
+            exists = await db.execute(select(PostType).where(PostType.name == name))
+            if not exists.scalars().first():
+                db.add(PostType(name=name))
+        await db.commit()
+
+        # Default users
+        for username, email, role_id in [
+            ("manager", "manager@demo.ru", 1),
+            ("user1",   "user@demo.ru",    2),
+        ]:
+            exists = await db.execute(select(User).where(User.username == username))
+            if not exists.scalars().first():
+                db.add(User(
+                    username=username,
+                    email=email,
+                    password_hash=pwd.hash("123456"),
+                    role_id=role_id,
+                ))
+        await db.commit()
+        print("Seed completed!")
+
+asyncio.run(seed())
+
+--------------------------
+
+web\index.html-------
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ads Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50">
+
+<!-- Шапка -->
+<header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+  <div class="flex items-center gap-8">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold">A</div>
+      <span class="text-xl font-semibold text-gray-900">Ads Manager</span>
+    </div>
+    <div class="relative w-80">
+      <input type="text" id="searchInput" placeholder="Поиск публикаций..."
+             oninput="onSearch(this.value)"
+             class="w-full bg-gray-100 border border-gray-200 rounded-xl pl-9 py-2 text-sm focus:outline-none focus:border-emerald-400">
+      <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <button onclick="openCreateModal()"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2 rounded-xl flex items-center gap-2 transition text-sm">
+      <i class="fas fa-plus"></i> Новая публикация
+    </button>
+    <span class="text-sm text-gray-600" id="headerUsername"></span>
+    <button onclick="logout()" class="text-sm text-gray-500 hover:text-red-500 transition">
+      <i class="fas fa-sign-out-alt"></i> Выход
+    </button>
+  </div>
+</header>
+
+<div class="flex h-[calc(100vh-57px)]">
+  <!-- Сайдбар -->
+  <aside class="w-56 bg-white border-r border-gray-200 flex flex-col py-4 px-3 gap-1">
+    <button onclick="loadPage('dashboard')" id="nav-dashboard" class="nav-btn active">
+      <i class="fas fa-home w-5"></i> Главная
+    </button>
+    <button onclick="loadPage('posts')" id="nav-posts" class="nav-btn">
+      <i class="fas fa-file-alt w-5"></i> Все публикации
+    </button>
+    <button onclick="loadPage('calendar')" id="nav-calendar" class="nav-btn">
+      <i class="fas fa-calendar w-5"></i> Календарь
+    </button>
+    <button onclick="loadPage('tags')" id="nav-tags" class="nav-btn">
+      <i class="fas fa-tags w-5"></i> Теги
+    </button>
+    <div id="nav-manager-section"></div>
+  </aside>
+
+  <!-- Основной контент -->
+  <main class="flex-1 overflow-y-auto p-6" id="mainContent">
+    <div class="flex items-center justify-center h-full text-gray-400">
+      <i class="fas fa-spinner fa-spin text-3xl"></i>
+    </div>
+  </main>
+</div>
+
+<!-- Модальное окно -->
+<div id="modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1';
+let currentUser = null;
+let calendarMonth = new Date().getMonth();
+let calendarYear  = new Date().getFullYear();
+let searchTimer   = null;
+
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+function getToken() { return localStorage.getItem('token'); }
+
+async function apiFetch(path, options = {}) {
+  const token = getToken();
+  // Убираем двойной слэш: нормализуем путь
+  const url = `${API}/${path}`.replace(/\/+/g, '/');
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) { logout(); return null; }
+  return res;
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  window.location.href = 'login.html';
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function setActiveNav(page) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`nav-${page}`);
+  if (btn) btn.classList.add('active');
+}
+
+function loadPage(page) {
+  setActiveNav(page);
+  if (page === 'dashboard')  renderDashboard();
+  else if (page === 'posts') renderPosts({});
+  else if (page === 'calendar') renderCalendar();
+  else if (page === 'tags')  renderTags();
+  else if (page === 'moderation') renderModeration();
+}
+
+function onSearch(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => renderPosts({ search: val }), 400);
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+async function renderDashboard() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `<div class="flex items-center justify-center h-full"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>`;
+  const res = await apiFetch('/posts/?page_size=100');
+  if (!res) return;
+  const data = await res.json();
+  const all   = data.items || [];
+  const draft = all.filter(p => p.status_id === 1).length;
+  const mod   = all.filter(p => p.status_id === 2).length;
+  const pub   = all.filter(p => p.status_id === 4).length;
+
+  main.innerHTML = `
+    <h1 class="text-2xl font-semibold mb-6">Добро пожаловать, ${currentUser.username}!</h1>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <p class="text-gray-500 text-sm mb-1">Всего публикаций</p>
+        <p class="text-4xl font-bold">${data.total}</p>
+      </div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <p class="text-gray-500 text-sm mb-1">На модерации</p>
+        <p class="text-4xl font-bold text-amber-500">${mod}</p>
+      </div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <p class="text-gray-500 text-sm mb-1">Опубликовано</p>
+        <p class="text-4xl font-bold text-emerald-600">${pub}</p>
+      </div>
+    </div>
+    <h2 class="text-lg font-semibold mb-3">Последние публикации</h2>
+    <div class="space-y-3">${all.slice(0,5).map(postCard).join('')}</div>
+  `;
+}
+
+// ── Posts list ────────────────────────────────────────────────────────────────
+// Состояние фильтров — вне функции
+let postFilters = { status_id: '', order_by: 'created_at' };
+
+async function renderPosts(extra) {
+    // Обновляем состояние если пришли новые значения
+    if (extra) Object.assign(postFilters, extra);
+
+    setActiveNav('posts');
+    const main = document.getElementById('mainContent');
+    main.innerHTML = `<div class="flex items-center justify-center h-full"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>`;
+
+    const params = new URLSearchParams({ page: 1, pagesize: 50, orderby: postFilters.order_by, orderdir: 'desc' });
+    if (postFilters.status_id) params.set('status_id', postFilters.status_id);
+
+    const res = await apiFetch(`/posts?${params}`);
+    if (!res) return;
+    const data = await res.json();
+
+    // Опции статусов с нужным selected
+    const statusOptions = [
+        { value: '',  label: 'Все статусы' },
+        { value: '1', label: 'Черновик' },
+        { value: '2', label: 'На модерации' },
+        { value: '3', label: 'Одобрен' },
+        { value: '4', label: 'Опубликован' },
+        { value: '5', label: 'Отклонён' },
+    ].map(o => `<option value="${o.value}" ${postFilters.status_id === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+
+    // Опции сортировки с нужным selected
+    const orderOptions = [
+        { value: 'created_at',   label: 'По дате создания' },
+        { value: 'scheduled_at', label: 'По дате публикации' },
+        { value: 'title',        label: 'По заголовку' },
+        { value: 'status_id',    label: 'По статусу' },
+    ].map(o => `<option value="${o.value}" ${postFilters.order_by === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+
+    main.innerHTML = `
+        <div class="flex items-center justify-between mb-5">
+            <h1 class="text-2xl font-semibold">Публикации <span class="text-gray-400 text-base font-normal">${data.total}</span></h1>
+            <div class="flex gap-3">
+                <select onchange="renderPosts({status_id: this.value})" class="border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                    ${statusOptions}
+                </select>
+                <select onchange="renderPosts({order_by: this.value})" class="border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                    ${orderOptions}
+                </select>
+            </div>
+        </div>
+        <div class="space-y-3">${data.items.length ? data.items.map(postCard).join('') : '<p class="text-gray-400">Нет постов</p>'}</div>
+    `;
+}
+
+function statusBadge(statusId, statusName) {
+  const map = {1:'bg-gray-100 text-gray-600', 2:'bg-amber-100 text-amber-700',
+               3:'bg-blue-100 text-blue-700', 4:'bg-emerald-100 text-emerald-700', 5:'bg-red-100 text-red-600'};
+  const names = {1:'Черновик',2:'Модерация',3:'Одобрен',4:'Опубликован',5:'Отклонён'};
+  return `<span class="text-xs px-3 py-1 rounded-full font-medium ${map[statusId]||'bg-gray-100'}">${statusName||names[statusId]||'—'}</span>`;
+}
+
+function postCard(p) {
+  const tags = (p.tags||[]).map(t=>`<span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">#${t.name}</span>`).join('');
+  const date = p.scheduled_at ? new Date(p.scheduled_at).toLocaleString('ru-RU') : '';
+  return `
+    <div onclick="viewPost(${p.id})" class="post-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition">
+      <div class="flex justify-between items-start gap-3">
+        <h3 class="font-semibold text-gray-900 leading-tight">${p.title||'(без названия)'}</h3>
+        ${statusBadge(p.status_id, p.status?.name)}
+      </div>
+      ${p.content ? `<p class="text-gray-500 text-sm mt-2 line-clamp-2">${p.content.substring(0,120)}</p>` : ''}
+      <div class="flex flex-wrap gap-1.5 mt-3">${tags}</div>
+      ${date ? `<p class="text-xs text-gray-400 mt-3"><i class="far fa-clock mr-1"></i>${date}</p>` : ''}
+    </div>
+  `;
+}
+
+function renderTelegramButton(post) {
+    if (post.status_id !== 3) return '';
+    return `
+        <button 
+            onclick="scheduleTelegram(${post.id})"
+            class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl transition">
+            <i class="fab fa-telegram"></i> Выложить в Telegram
+        </button>
+    `;
+}
+
+async function scheduleTelegram(postId) {
+    const chatId = prompt("ID Telegram-группы (например: -1001234567890):");
+    if (!chatId) return;
+
+    const dateStr = prompt("Дата и время публикации (например: 2026-06-14T18:00):");
+    if (!dateStr) return;
+
+    const res = await apiFetch(`posts/${postId}/schedule-telegram`, {
+        method: 'POST',
+        body: JSON.stringify({
+            chat_id: chatId,
+            scheduled_at: new Date(dateStr).toISOString()
+        })
+    });
+
+    if (res && res.ok) {
+        alert('✅ Публикация запланирована!');
+    } else {
+        alert('❌ Ошибка при планировании');
+    }
+}
+
+// ── View single post ──────────────────────────────────────────────────────────
+async function viewPost(id) {
+  const res = await apiFetch(`/posts/${id}`);
+  if (!res || !res.ok) return;
+  const p = await res.json();
+  const isManager = currentUser.role_id === 1;
+  const isOwner   = p.author_id === currentUser.id;
+
+  const media = (p.media_items||[]).map(m =>
+    m.media_type === 'image'
+      ? `<img src="${m.file_url}" class="w-full rounded-xl mt-4 object-cover max-h-64">`
+      : `<video src="${m.file_url}" controls class="w-full rounded-xl mt-4"></video>`
+  ).join('');
+
+  const tags = (p.tags||[]).map(t=>`<span class="text-sm bg-gray-100 px-3 py-1 rounded-full">#${t.name}</span>`).join('');
+
+  let actions = '';
+  if (p.status_id === 1 && isOwner)
+    actions += `<button onclick="submitPost(${p.id})" class="btn-success">Отправить на модерацию</button>`;
+  if (p.status_id === 2 && isManager) {
+    actions += `<button onclick="approvePost(${p.id})" class="btn-success">Одобрить</button>`;
+    actions += `<button onclick="rejectPost(${p.id})"  class="btn-danger">Отклонить</button>`;
+  }
+  if ((p.status_id === 1 || p.status_id === 5) && isOwner)
+    actions += `<button onclick="openEditModal(${p.id})" class="btn-secondary">Редактировать</button>`;
+  if (isOwner || isManager)
+    actions += `<button onclick="confirmDelete(${p.id})" class="btn-danger">Удалить</button>`;
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+    <button onclick="loadPage('posts')" class="mb-5 text-emerald-600 hover:underline text-sm flex items-center gap-1">
+      <i class="fas fa-arrow-left"></i> Назад
+    </button>
+    <div class="bg-white rounded-2xl p-8 max-w-2xl shadow-sm border border-gray-100">
+      <div class="flex justify-between items-start mb-4">
+        <h1 class="text-2xl font-bold">${p.title||'(без названия)'}</h1>
+        ${statusBadge(p.status_id, p.status?.name)}
+      </div>
+      ${p.scheduled_at ? `<p class="text-sm text-gray-500 mb-4"><i class="far fa-clock mr-1"></i>${new Date(p.scheduled_at).toLocaleString('ru-RU')}</p>` : ''}
+      ${media}
+      ${p.content ? `<div class="mt-5 text-gray-700 leading-relaxed whitespace-pre-wrap">${p.content}</div>` : ''}
+      ${tags ? `<div class="flex flex-wrap gap-2 mt-5">${tags}</div>` : ''}
+      ${actions ? `<div class="flex flex-wrap gap-3 mt-7 pt-5 border-t border-gray-100">${actions}</div>` : ''}
+    </div>
+  `;
+}
+
+// ── Post actions ──────────────────────────────────────────────────────────────
+async function submitPost(id) {
+  const res = await apiFetch(`/posts/${id}/submit`, { method: 'POST' });
+  if (res && res.ok) { alert('Пост отправлен на модерацию'); viewPost(id); }
+}
+async function approvePost(id) {
+  const res = await apiFetch(`/posts/${id}/approve`, { method: 'POST' });
+  if (res && res.ok) { alert('Пост одобрен'); viewPost(id); }
+}
+async function rejectPost(id) {
+  const res = await apiFetch(`/posts/${id}/reject`, { method: 'POST' });
+  if (res && res.ok) { alert('Пост отклонён'); viewPost(id); }
+}
+async function confirmDelete(id) {
+  if (!confirm('Удалить этот пост?')) return;
+  const res = await apiFetch(`/posts/${id}`, { method: 'DELETE' });
+  if (res && res.status === 204) { loadPage('posts'); }
+}
+
+// ── Moderation page ───────────────────────────────────────────────────────────
+async function renderModeration() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+  const res = await apiFetch('/posts/?status_id=2&page_size=50');
+  if (!res) return;
+  const data = await res.json();
+  main.innerHTML = `
+    <h1 class="text-2xl font-semibold mb-5">Модерация <span class="text-gray-400 text-base font-normal">(${data.total})</span></h1>
+    <div class="space-y-3">${data.items.length ? data.items.map(postCard).join('') : '<p class="text-gray-400">Нет постов на модерации</p>'}</div>
+  `;
+}
+
+// ── Create / Edit modal ───────────────────────────────────────────────────────
+async function openCreateModal() {
+  let tagsRes = await apiFetch('/tags/?limit=30');
+  let allTags = tagsRes && tagsRes.ok ? (await tagsRes.json()) : [];
+  showModal(postForm(null, allTags));
+}
+async function openEditModal(id) {
+  const res = await apiFetch(`/posts/${id}`);
+  const post = res && res.ok ? await res.json() : null;
+  let tagsRes = await apiFetch('/tags/?limit=30');
+  let allTags = tagsRes && tagsRes.ok ? (await tagsRes.json()) : [];
+  showModal(postForm(post, allTags));
+}
+
+function postForm(post, allTags) {
+    const isEdit = !!post;
+    const tagOptions = allTags.map(t =>
+        `<option value="${t.id}" ${post?.tags.some(pt => pt.id === t.id) ? 'selected' : ''}>${t.name}</option>`
+    ).join('');
+
+    
+    const scheduledValue = post?.scheduled_at
+        ? post.scheduled_at.replace('Z', '').slice(0, 16)
+        : '';
+
+    return `<div class="p-6">
+      <h2 class="text-xl font-semibold mb-5">${isEdit ? 'Редактировать' : 'Новая публикация'}</h2>
+      <div class="space-y-4">
+        <input id="fTitle" type="text" value="${post?.title || ''}" placeholder="Заголовок" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+        <textarea id="fContent" rows="5" placeholder="Текст" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400 resize-none">${post?.content || ''}</textarea>
+        <div>
+          <label class="text-sm text-gray-500 mb-1 block">Теги</label>
+          <select id="fTags" multiple class="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none">${tagOptions}</select>
+          <p class="text-xs text-gray-400 mt-1">Удерживайте Ctrl для выбора нескольких</p>
+        </div>
+        <div>
+          <label class="text-sm text-gray-500 mb-1 block">Дата публикации</label>
+          <input id="fDate" type="datetime-local" value="${scheduledValue}" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+        </div>
+        <div>
+          <label class="text-sm text-gray-500 mb-1 block">Медиафайлы (фото/видео)</label>
+          <input id="fMedia" type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm"
+            class="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-400">
+          <p class="text-xs text-gray-400 mt-1">JPEG, PNG, GIF, WebP, MP4, WebM — до 50 МБ каждый</p>
+          ${post?.media_items?.length ? `
+            <div class="flex flex-wrap gap-2 mt-3" id="existingMedia">
+              ${post.media_items.map(m => m.media_type === 'image'
+                ? `<img src="${m.file_url}" class="h-20 w-20 object-cover rounded-lg border border-gray-200">`
+                : `<video src="${m.file_url}" class="h-20 w-20 object-cover rounded-lg border border-gray-200"></video>`
+              ).join('')}
+            </div>` : ''}
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button onclick="${isEdit ? `savePost(${post.id})` : 'createPost()'}" class="flex-1 btn-success">${isEdit ? 'Сохранить' : 'Создать'}</button>
+        <button onclick="closeModal()" class="btn-secondary">Отмена</button>
+      </div>
+    </div>`;
+}
+
+async function uploadMediaFiles(postId) {
+    const input = document.getElementById('fMedia');
+    if (!input || !input.files.length) return;
+    const token = getToken();
+    for (const file of input.files) {
+        const form = new FormData();
+        form.append('file', file);
+        await fetch(`${API}/posts/${postId}/media`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: form,
+        });
+    }
+}
+
+async function createPost() {
+    const body = collectPostForm();
+    const res = await apiFetch('/posts', { method: 'POST', body: JSON.stringify(body) });
+    if (res && res.ok) {
+        const post = await res.json();
+        await uploadMediaFiles(post.id);  // ← загружаем файлы
+        closeModal();
+        loadPage('posts');
+    } else {
+        const e = await res.json();
+        alert(e.detail);
+    }
+}
+
+async function savePost(id) {
+    const body = collectPostForm();
+    const res = await apiFetch(`/posts/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+    if (res && res.ok) {
+        await uploadMediaFiles(id);  // ← загружаем файлы
+        closeModal();
+        viewPost(id);
+    } else {
+        const e = await res.json();
+        alert(e.detail);
+    }
+}
+
+function collectPostForm() {
+    const tagSelect = document.getElementById('fTags');
+    const selectedOptions = [...tagSelect.selectedOptions];
+    // null = не менять теги, [] = очистить все теги
+    const tagIds = selectedOptions.length > 0
+        ? selectedOptions.map(o => parseInt(o.value))
+        : null;
+
+    const date = document.getElementById('fDate').value;
+    return {
+        title: document.getElementById('fTitle').value.trim() || null,
+        content: document.getElementById('fContent').value.trim() || null,
+        scheduled_at: date ? new Date(date).toISOString() : null,
+        tag_ids: tagIds,
+    };
+}
+
+// ── Tags page ─────────────────────────────────────────────────────────────────
+async function renderTags() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+  const res = await apiFetch('/tags/?limit=50');
+  const tags = res && res.ok ? await res.json() : [];
+
+  main.innerHTML = `
+    <h1 class="text-2xl font-semibold mb-5">Теги</h1>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 max-w-lg">
+      <div class="flex gap-3 mb-6">
+        <input id="newTagInput" type="text" placeholder="Новый тег"
+               class="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-400">
+        <button onclick="addTag()" class="bg-emerald-600 text-white px-5 py-2 rounded-xl text-sm hover:bg-emerald-700 transition">Добавить</button>
+      </div>
+      <div class="flex flex-wrap gap-2" id="tagsContainer">
+        ${tags.map(t=>`
+          <div class="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1.5">
+            <span class="text-sm font-medium">#${t.name}</span>
+            <span class="text-xs text-gray-400 ml-1">${t.posts_count||0}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+async function addTag() {
+  const input = document.getElementById('newTagInput');
+  const name  = input.value.trim().toLowerCase();
+  if (!name) return;
+  const res = await apiFetch('/tags/', { method:'POST', body: JSON.stringify({ name }) });
+  if (res && res.ok) { input.value=''; renderTags(); }
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+async function renderCalendar() {
+  const main = document.getElementById('mainContent');
+  const res  = await apiFetch('/posts/?page_size=200');
+  const data = res && res.ok ? await res.json() : { items:[] };
+  const posts = data.items || [];
+
+  main.innerHTML = `
+    <h1 class="text-2xl font-semibold mb-5">Календарь публикаций</h1>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div class="flex justify-between items-center mb-4">
+        <button onclick="prevMonth()" class="p-2 hover:bg-gray-100 rounded-xl text-xl">‹</button>
+        <h2 id="calTitle" class="text-xl font-medium"></h2>
+        <button onclick="nextMonth()" class="p-2 hover:bg-gray-100 rounded-xl text-xl">›</button>
+      </div>
+      <div class="grid grid-cols-7 text-center text-xs text-gray-400 mb-2">
+        <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+      </div>
+      <div id="calGrid" class="grid grid-cols-7 gap-1"></div>
+    </div>
+  `;
+  renderCalGrid(calendarMonth, calendarYear, posts);
+}
+
+function renderCalGrid(month, year, posts) {
+  document.getElementById('calTitle').textContent =
+    new Date(year, month).toLocaleString('ru-RU', { month:'long', year:'numeric' });
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+  const days     = new Date(year, month+1, 0).getDate();
+  const today    = new Date();
+
+  for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div></div>';
+  for (let d = 1; d <= days; d++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dp = posts.filter(p => p.scheduled_at && p.scheduled_at.startsWith(ds));
+    const isToday = d===today.getDate() && month===today.getMonth() && year===today.getFullYear();
+    grid.innerHTML += `
+      <div class="h-20 border rounded-xl p-1 text-xs cursor-pointer hover:border-emerald-400 transition ${isToday?'bg-emerald-50 border-emerald-300':'border-gray-100'}"
+           onclick="showDayPosts('${ds}')">
+        <div class="font-medium ${isToday?'text-emerald-600':''}">${d}</div>
+        ${dp.slice(0,2).map(p=>`<div class="truncate text-emerald-600 mt-0.5">${p.title||'(пост)'}</div>`).join('')}
+        ${dp.length>2?`<div class="text-gray-400">+${dp.length-2}</div>`:''}
+      </div>
+    `;
+  }
+}
+
+function showDayPosts(ds) {
+  alert(`Публикации на ${ds}:\n\nОткройте вкладку "Все публикации" и отфильтруйте по дате.`);
+}
+
+function prevMonth() {
+  calendarMonth--; if (calendarMonth<0){calendarMonth=11;calendarYear--;}
+  renderCalendar();
+}
+function nextMonth() {
+  calendarMonth++; if (calendarMonth>11){calendarMonth=0;calendarYear++;}
+  renderCalendar();
+}
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+function showModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!getToken()) { window.location.href = 'login.html'; return; }
+
+  const res = await apiFetch('/users/me');
+  if (!res || !res.ok) { logout(); return; }
+  currentUser = await res.json();
+
+  document.getElementById('headerUsername').textContent = currentUser.username;
+
+  // Кнопка модерации для менеджера
+  if (currentUser.role_id === 1) {
+    document.getElementById('nav-manager-section').innerHTML = `
+      <button onclick="loadPage('moderation')" id="nav-moderation" class="nav-btn">
+        <i class="fas fa-user-shield w-5"></i> Модерация
+      </button>
+    `;
+  }
+
+  loadPage('dashboard');
+});
+</script>
+</body>
+</html>
+
+--------------------------
+
+web\login.html-------
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход — Ads Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md">
+    <div class="flex justify-center mb-8">
+      <div class="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold">A</div>
+    </div>
+    <h1 id="formTitle" class="text-3xl font-semibold text-center mb-2">Вход в систему</h1>
+    <p class="text-center text-gray-500 mb-8" id="formSubtitle">Ads Manager — планирование публикаций</p>
+
+    <div class="space-y-4">
+      <input type="text" id="username" placeholder="Имя пользователя (при регистрации)"
+             class="hidden w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+      <input type="email" id="email" placeholder="Email"
+             class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+      <input type="password" id="password" placeholder="Пароль"
+             class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+      <p id="errorMsg" class="text-red-500 text-sm hidden"></p>
+      <button onclick="submitForm()" id="submitBtn"
+              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 rounded-2xl transition">
+        Войти
+      </button>
+    </div>
+
+    <div class="text-center mt-6">
+      <button onclick="toggleForm()" id="toggleBtn" class="text-emerald-600 hover:underline text-sm">
+        Нет аккаунта? Зарегистрироваться
+      </button>
+    </div>
+    <p class="text-center text-xs text-gray-400 mt-8">
+      Демо: manager@demo.ru / 123456
+    </p>
+  </div>
+
+  <script>
+    const API = '/api/v1';
+    let isLogin = true;
+
+    function toggleForm() {
+      isLogin = !isLogin;
+      document.getElementById('formTitle').textContent = isLogin ? 'Вход в систему' : 'Регистрация';
+      document.getElementById('formSubtitle').textContent = isLogin ? 'Ads Manager — планирование публикаций' : 'Создайте новый аккаунт';
+      document.getElementById('username').classList.toggle('hidden', isLogin);
+      document.getElementById('submitBtn').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
+      document.getElementById('toggleBtn').textContent = isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти';
+      document.getElementById('errorMsg').classList.add('hidden');
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    async function submitForm() {
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      if (!email || !password) { showError('Заполните все поля'); return; }
+
+      try {
+        if (isLogin) {
+          const res = await fetch(`${API}/auth/login`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ email, password })
+          });
+          if (!res.ok) { const e = await res.json(); showError(e.detail || 'Ошибка'); return; }
+          const data = await res.json();
+          localStorage.setItem('token', data.access_token);
+          window.location.href = 'index.html';
+        } else {
+          const username = document.getElementById('username').value.trim();
+          if (!username) { showError('Введите имя пользователя'); return; }
+          const res = await fetch(`${API}/auth/register`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ username, email, password })
+          });
+          if (!res.ok) { const e = await res.json(); showError(e.detail || 'Ошибка'); return; }
+          alert('Регистрация успешна! Войдите в систему.');
+          toggleForm();
+        }
+      } catch(e) { showError('Нет соединения с сервером'); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('token')) window.location.href = 'index.html';
+      document.addEventListener('keydown', e => { if (e.key === 'Enter') submitForm(); });
+    });
+  </script>
+</body>
+</html>
+
+--------------------------
+
+web\main.py-------
+import uvicorn
+
+if __name__ == "__main__":
+    uvicorn.run("src.api.main:app", host="0.0.0.0", port=8000, reload=True)
+
+--------------------------
+
+web\nginx.conf-------
+server {
+    listen 80;
+
+    resolver 127.0.0.11 valid=5s;  # ← встроенный DNS Docker
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api {
+        set $upstream http://api:8000;
+        proxy_pass $upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /uploads {
+        set $upstream http://api:8000;
+        proxy_pass $upstream;
+    }
+}
+
+--------------------------
+
+web\css\style.css-------
+/* Ads Manager — custom styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body { font-family: 'Inter', sans-serif; }
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #4b5563;
+  transition: all 140ms ease;
+}
+.nav-btn:hover { background: #f3f4f6; color: #111827; }
+.nav-btn.active { background: #d1fae5; color: #059669; font-weight: 500; }
+
+.btn-success {
+  background: #059669; color: white; font-size: 0.875rem;
+  padding: 0.625rem 1.25rem; border-radius: 0.75rem;
+  transition: background 140ms; cursor: pointer;
+}
+.btn-success:hover { background: #047857; }
+
+.btn-secondary {
+  background: #f3f4f6; color: #374151; font-size: 0.875rem;
+  padding: 0.625rem 1.25rem; border-radius: 0.75rem;
+  transition: background 140ms; cursor: pointer;
+}
+.btn-secondary:hover { background: #e5e7eb; }
+
+.btn-danger {
+  background: #fee2e2; color: #dc2626; font-size: 0.875rem;
+  padding: 0.625rem 1.25rem; border-radius: 0.75rem;
+  transition: background 140ms; cursor: pointer;
+}
+.btn-danger:hover { background: #fca5a5; }
+
+.post-card { transition: all 140ms ease; }
+.post-card:hover { transform: translateY(-1px); }
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+--------------------------
+
+web\js\script.js-------
+const API = '/api/v1';
+
+let currentUser = null;
+let posts = [];
+let currentFilter = { status: 'all', tag: 'all', sort: 'date-desc' };
+let calendarMonth = new Date().getMonth();
+let calendarYear = new Date().getFullYear();
+
+// ─── AUTH HELPERS ────────────────────────────────────────────────────────────
+
+function getToken() {
+  return localStorage.getItem('token');
+}
+
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${getToken()}`
+  };
+}
+
+async function fetchCurrentUser() {
+  const res = await fetch(`${API}/users/me`, { headers: authHeaders() });
+  if (res.status === 401) { logout(); return null; }
+  return await res.json();
+}
+
+function checkAuth() {
+  const token = getToken();
+  const currentPage = window.location.pathname.split('/').pop();
+  if (!token) {
+    window.location.href = 'login.html';
+    return false;
+  }
+  return true;
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  window.location.href = 'login.html';
+}
+
+// ─── API CALLS ───────────────────────────────────────────────────────────────
+
+async function apiFetch(path, options = {}) {
+  const token = getToken();
+  // Убираем двойной слэш: нормализуем путь
+  const url = `${API}/${path}`.replace(/\/+/g, '/');
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) { logout(); return null; }
+  return res;
+}
+
+async function loadPosts(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.status && filters.status !== 'all') params.set('status_id', filters.status);
+  if (filters.tag_ids && filters.tag_ids.length) filters.tag_ids.forEach(id => params.append('tag_ids', id));
+  if (filters.scheduled_from) params.set('scheduled_from', filters.scheduled_from);
+  if (filters.scheduled_to) params.set('scheduled_to', filters.scheduled_to);
+  if (filters.order_by) params.set('order_by', filters.order_by);
+  if (filters.order_dir) params.set('order_dir', filters.order_dir);
+  params.set('page_size', '100');
+
+  const res = await apiFetch(`/posts/?${params}`);
+  if (!res || !res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+async function loadTags() {
+  const res = await apiFetch('/tags/');
+  if (!res || !res.ok) return [];
+  return await res.json();
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+
+function renderSidebar() {
+  const menu = document.getElementById('sidebarMenu');
+  const isManager = currentUser?.role?.name === 'manager';
+
+  menu.innerHTML = `
+    <div onclick="loadPage('dashboard')" class="menu-item active flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer">
+      <i class="fas fa-home w-5"></i><span>Главная</span>
+    </div>
+    <div onclick="loadPage('posts')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer">
+      <i class="fas fa-file-alt w-5"></i><span>Все публикации</span>
+    </div>
+    <div onclick="loadPage('calendar')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer">
+      <i class="fas fa-calendar w-5"></i><span>Календарь</span>
+    </div>
+    <div onclick="loadPage('tags')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer">
+      <i class="fas fa-tags w-5"></i><span>Теги</span>
+    </div>
+    ${isManager ? `
+    <div onclick="loadPage('moderation')" class="menu-item flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer">
+      <i class="fas fa-user-shield w-5"></i><span>Модерация</span>
+    </div>` : ''}
+  `;
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+
+async function renderDashboard() {
+  document.getElementById('rec_header').innerHTML =
+    `<h1 class="text-2xl font-semibold text-gray-900">Добро пожаловать, ${currentUser.username}!</h1>`;
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `<p class="text-gray-400">Загрузка...</p>`;
+
+  posts = await loadPosts();
+
+  const onModeration = posts.filter(p => p.status_id === 2).length;
+  const published    = posts.filter(p => p.status_id === 4).length;
+
+  main.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white p-6 rounded-3xl shadow-sm">
+        <h3 class="text-gray-500">Всего публикаций</h3>
+        <p class="text-5xl font-semibold mt-2">${posts.length}</p>
+      </div>
+      <div class="bg-white p-6 rounded-3xl shadow-sm">
+        <h3 class="text-gray-500">Ожидают модерации</h3>
+        <p class="text-5xl font-semibold mt-2 text-amber-600">${onModeration}</p>
+      </div>
+      <div class="bg-white p-6 rounded-3xl shadow-sm">
+        <h3 class="text-gray-500">Опубликовано</h3>
+        <p class="text-5xl font-semibold mt-2 text-emerald-600">${published}</p>
+      </div>
+    </div>
+  `;
+}
+
+// ─── POSTS LIST ──────────────────────────────────────────────────────────────
+
+const STATUS_LABELS = {
+  1: { label: 'Черновик',       cls: 'bg-gray-100 text-gray-600' },
+  2: { label: 'На модерации',   cls: 'bg-amber-100 text-amber-700' },
+  3: { label: 'Одобрен',        cls: 'bg-blue-100 text-blue-700' },
+  4: { label: 'Опубликован',    cls: 'bg-emerald-100 text-emerald-700' },
+  5: { label: 'Отклонён',       cls: 'bg-red-100 text-red-600' },
+};
+
+async function renderPosts() {
+  document.getElementById('rec_header').innerHTML =
+    `<h1 class="text-2xl font-semibold text-gray-900">Рекламные кампании</h1>`;
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+    <div class="flex flex-wrap gap-3 mb-6">
+      <select id="filterStatus" onchange="applyFilter()" class="px-4 py-2 border border-gray-200 rounded-2xl text-sm">
+        <option value="all">Все статусы</option>
+        <option value="1">Черновик</option>
+        <option value="2">На модерации</option>
+        <option value="3">Одобрен</option>
+        <option value="4">Опубликован</option>
+        <option value="5">Отклонён</option>
+      </select>
+      <select id="filterSort" onchange="applyFilter()" class="px-4 py-2 border border-gray-200 rounded-2xl text-sm">
+        <option value="created_at|desc">Сначала новые</option>
+        <option value="created_at|asc">Сначала старые</option>
+        <option value="scheduled_at|asc">По дате публикации ↑</option>
+        <option value="scheduled_at|desc">По дате публикации ↓</option>
+        <option value="title|asc">По названию А-Я</option>
+      </select>
+      <input id="filterSearch" type="text" placeholder="Поиск..."
+             oninput="applyFilter()"
+             class="px-4 py-2 border border-gray-200 rounded-2xl text-sm flex-1 min-w-[200px]">
+    </div>
+    <div id="postsList"><p class="text-gray-400">Загрузка...</p></div>
+  `;
+
+  await applyFilter();
+}
+
+async function applyFilter() {
+  const status  = document.getElementById('filterStatus')?.value || 'all';
+  const sortVal = document.getElementById('filterSort')?.value   || 'created_at|desc';
+  const search  = document.getElementById('filterSearch')?.value || '';
+  const [order_by, order_dir] = sortVal.split('|');
+
+  const filters = { order_by, order_dir };
+  if (status !== 'all') filters.status = status;
+
+  let items = await loadPosts(filters);
+
+  if (search) {
+    const q = search.toLowerCase();
+    items = items.filter(p =>
+      (p.title   || '').toLowerCase().includes(q) ||
+      (p.content || '').toLowerCase().includes(q)
+    );
+  }
+
+  posts = items;
+  renderPostsList(items);
+}
+
+function renderPostsList(items) {
+  const container = document.getElementById('postsList');
+  if (!container) return;
+
+  if (!items.length) {
+    container.innerHTML = `<p class="text-gray-400 mt-8 text-center">Публикации не найдены</p>`;
+    return;
+  }
+
+  container.innerHTML = items.map(post => {
+    const s = STATUS_LABELS[post.status_id] || { label: '—', cls: 'bg-gray-100 text-gray-500' };
+    const tags = (post.tags || []).map(t =>
+      `<span class="text-xs bg-gray-100 px-3 py-1 rounded-full">#${t.name}</span>`
+    ).join('');
+    const date = post.scheduled_at
+      ? new Date(post.scheduled_at).toLocaleString('ru-RU') : '—';
+
+    return `
+      <div class="pub-card bg-white rounded-3xl p-6 shadow-sm cursor-pointer hover:shadow-md mb-4"
+           onclick="viewPost(${post.id})">
+        <div class="flex justify-between items-start">
+          <h3 class="font-semibold text-lg leading-tight">${post.title || 'Без названия'}</h3>
+          <span class="text-xs px-3 py-1 rounded-full ${s.cls}">${s.label}</span>
+        </div>
+        <p class="text-gray-500 text-sm mt-4 line-clamp-2">
+          ${(post.content || '').substring(0, 120)}${(post.content || '').length > 120 ? '...' : ''}
+        </p>
+        <div class="flex flex-wrap gap-2 mt-4">${tags}</div>
+        <div class="text-xs text-gray-400 mt-4">${date}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── VIEW POST ────────────────────────────────────────────────────────────────
+
+async function viewPost(id) {
+  const res = await apiFetch(`/posts/${id}`);
+  if (!res || !res.ok) { alert('Не удалось загрузить пост'); return; }
+  const post = await res.json();
+
+  const main = document.getElementById('mainContent');
+  const s = STATUS_LABELS[post.status_id] || { label: '—', cls: 'bg-gray-100' };
+  const isManager = currentUser?.role?.name === 'manager';
+
+  const mediaHtml = (post.media || []).map(m =>
+    m.media_type?.startsWith('video')
+      ? `<video src="${m.file_url}" controls class="w-full rounded-2xl mt-6"></video>`
+      : `<img src="${m.file_url}" class="w-full rounded-2xl mt-6" alt="">`
+  ).join('');
+
+  const tags = (post.tags || []).map(t =>
+    `<span class="text-sm bg-gray-100 px-3 py-1 rounded-full">#${t.name}</span>`
+  ).join('');
+
+  const moderationBtns = isManager && post.status_id === 2 ? `
+    <button onclick="approvePost(${post.id})"
+            class="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-medium hover:bg-emerald-700">
+      Одобрить и опубликовать
+    </button>
+    <button onclick="rejectPost(${post.id})"
+            class="flex-1 border border-red-300 text-red-600 py-4 rounded-2xl font-medium hover:bg-red-50">
+      Отклонить
+    </button>
+  ` : '';
+
+  main.innerHTML = `
+    <button onclick="loadPage('posts')"
+            class="mb-6 text-emerald-600 hover:underline flex items-center gap-2">
+      ← Назад к списку
+    </button>
+    <div class="bg-white rounded-3xl p-10 max-w-4xl mx-auto">
+      <div class="flex justify-between items-start mb-4">
+        <h1 class="text-3xl font-semibold">${post.title || 'Без названия'}</h1>
+        <span class="text-sm px-4 py-1 rounded-full ${s.cls}">${s.label}</span>
+      </div>
+      <p class="text-gray-500">
+        ${post.scheduled_at ? new Date(post.scheduled_at).toLocaleString('ru-RU') : '—'}
+      </p>
+      ${mediaHtml}
+      <div class="prose mt-8 text-gray-700 leading-relaxed">${post.content || ''}</div>
+      <div class="flex flex-wrap gap-2 mt-6">${tags}</div>
+      <div class="mt-10 flex gap-4">${moderationBtns}</div>
+    </div>
+  `;
+}
+
+// ─── CREATE POST ──────────────────────────────────────────────────────────────
+
+async function renderNewPost() {
+  const modal = document.getElementById('card-modal');
+  const body  = document.getElementById('modal-body');
+
+  const tagsData = await loadTags();
+  const tagOptions = tagsData.map(t =>
+    `<label class="flex items-center gap-2 cursor-pointer">
+       <input type="checkbox" value="${t.id}" class="post-tag-cb rounded"> #${t.name}
+     </label>`
+  ).join('');
+
+  body.innerHTML = `
+    <h1 class="text-3xl font-semibold mb-8">Новая публикация</h1>
+    <div class="max-w-2xl bg-white rounded-3xl p-10">
+      <input id="postTitle" type="text" placeholder="Заголовок публикации"
+             class="w-full px-5 py-4 border border-gray-300 rounded-2xl text-lg mb-6">
+      <textarea id="postText" rows="6" placeholder="Текст публикации..."
+                class="w-full px-5 py-4 border border-gray-300 rounded-2xl mb-6"></textarea>
+      <input id="postDate" type="datetime-local"
+             class="w-full px-5 py-4 border border-gray-300 rounded-2xl mb-6">
+      ${tagOptions ? `
+        <div class="mb-6">
+          <p class="text-sm text-gray-500 mb-3">Теги:</p>
+          <div class="flex flex-wrap gap-4">${tagOptions}</div>
+        </div>` : ''}
+      <div id="createPostError" class="text-red-500 text-sm mb-4 hidden"></div>
+      <button onclick="createPost()"
+              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl text-lg font-medium">
+        Создать публикацию
+      </button>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('card-modal').style.display = 'none';
+}
+
+async function createPost() {
+  const title      = document.getElementById('postTitle').value.trim();
+  const content    = document.getElementById('postText').value.trim();
+  const scheduledAt = document.getElementById('postDate').value;
+  const tagIds     = Array.from(document.querySelectorAll('.post-tag-cb:checked'))
+                          .map(cb => parseInt(cb.value));
+
+  const errEl = document.getElementById('createPostError');
+  if (!title || !content) {
+    errEl.textContent = 'Заполните заголовок и текст';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  errEl.classList.add('hidden');
+
+  const bodyData = { title, content, tag_ids: tagIds };
+  if (scheduledAt) bodyData.scheduled_at = new Date(scheduledAt).toISOString();
+
+  const res = await apiFetch('/posts/', {
+    method: 'POST',
+    body: JSON.stringify(bodyData)
+  });
+
+  if (res && res.ok) {
+    closeModal();
+    alert('Публикация создана!');
+    loadPage('posts');
+  } else {
+    const err = res ? await res.json() : null;
+    errEl.textContent = err?.detail || 'Ошибка при создании';
+    errEl.classList.remove('hidden');
+  }
+}
+
+// ─── MODERATION ───────────────────────────────────────────────────────────────
+
+async function renderModeration() {
+  const isManager = currentUser?.role?.name === 'manager';
+  if (!isManager) { alert('Доступ запрещён'); return; }
+
+  document.getElementById('rec_header').innerHTML =
+    `<h1 class="text-2xl font-semibold text-gray-900">Модерация публикаций</h1>`;
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `<p class="text-gray-400">Загрузка...</p>`;
+
+  const items = await loadPosts({ status: 2 });
+
+  if (!items.length) {
+    main.innerHTML = `<p class="text-gray-500 mt-8 text-center">Нет публикаций на модерации</p>`;
+    return;
+  }
+
+  main.innerHTML = items.map(post => `
+    <div id="mod-${post.id}" class="bg-white p-6 rounded-3xl mb-6 shadow-sm">
+      <h3 class="font-semibold text-lg">${post.title || 'Без названия'}</h3>
+      <p class="text-sm text-gray-500 mt-2">${(post.content || '').substring(0, 150)}...</p>
+      <p class="text-xs text-gray-400 mt-2">
+        ${post.scheduled_at ? new Date(post.scheduled_at).toLocaleString('ru-RU') : ''}
+      </p>
+      <div class="mt-6 flex gap-4">
+        <button onclick="approvePost(${post.id})"
+                class="px-6 py-3 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700">
+          Одобрить
+        </button>
+        <button onclick="rejectPost(${post.id})"
+                class="px-6 py-3 border border-red-300 text-red-600 rounded-2xl hover:bg-red-50">
+          Отклонить
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function approvePost(id) {
+  const res = await apiFetch(`/posts/${id}/approve`, { method: 'POST' });
+  if (res && res.ok) {
+    document.getElementById(`mod-${id}`)?.remove();
+    alert('Публикация одобрена!');
+  } else {
+    alert('Ошибка при одобрении');
+  }
+}
+
+async function rejectPost(id) {
+  if (!confirm('Отклонить публикацию?')) return;
+  const res = await apiFetch(`/posts/${id}/reject`, { method: 'POST' });
+  if (res && res.ok) {
+    document.getElementById(`mod-${id}`)?.remove();
+    alert('Публикация отклонена');
+  } else {
+    alert('Ошибка при отклонении');
+  }
+}
+
+// ─── CALENDAR ─────────────────────────────────────────────────────────────────
+
+async function renderCalendar() {
+  document.getElementById('rec_header').innerHTML =
+    `<h1 class="text-2xl font-semibold text-gray-900">Календарь публикаций</h1>`;
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+    <div class="bg-white rounded-3xl p-8 shadow-sm">
+      <div class="flex justify-between items-center mb-6">
+        <button onclick="prevMonth()" class="text-2xl px-4 py-2 hover:bg-gray-100 rounded-xl">‹</button>
+        <h2 id="calendarTitle" class="text-2xl font-medium"></h2>
+        <button onclick="nextMonth()" class="text-2xl px-4 py-2 hover:bg-gray-100 rounded-xl">›</button>
+      </div>
+      <div class="grid grid-cols-7 gap-2 text-center text-sm font-medium text-gray-500 mb-2">
+        <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+      </div>
+      <div id="calendarGrid" class="grid grid-cols-7 gap-2"></div>
+    </div>
+  `;
+
+  posts = await loadPosts();
+  renderCalendarGrid(calendarMonth, calendarYear);
+}
+
+function renderCalendarGrid(month, year) {
+  const titleEl = document.getElementById('calendarTitle');
+  if (titleEl) titleEl.textContent =
+    new Date(year, month).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+
+  const grid = document.getElementById('calendarGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const firstDay    = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  for (let i = 0; i < (firstDay === 0 ? 6 : firstDay - 1); i++) {
+    grid.innerHTML += `<div class="h-24"></div>`;
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr    = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const postsOnDay = posts.filter(p => p.scheduled_at?.startsWith(dateStr));
+    const isToday    = day === new Date().getDate() &&
+                       month === new Date().getMonth() &&
+                       year  === new Date().getFullYear();
+
+    grid.innerHTML += `
+      <div onclick="showDayPosts('${dateStr}')"
+           class="h-24 border border-gray-200 rounded-2xl p-2 hover:border-emerald-300 cursor-pointer transition
+                  ${isToday ? 'bg-emerald-50 border-emerald-300' : ''}">
+        <div class="font-medium ${isToday ? 'text-emerald-600' : ''}">${day}</div>
+        ${postsOnDay.length
+          ? `<div class="text-[10px] text-emerald-600 mt-1">• ${postsOnDay.length} пост(ов)</div>`
+          : ''}
+      </div>
+    `;
+  }
+}
+
+function prevMonth() {
+  calendarMonth--;
+  if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+  renderCalendarGrid(calendarMonth, calendarYear);
+}
+
+function nextMonth() {
+  calendarMonth++;
+  if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+  renderCalendarGrid(calendarMonth, calendarYear);
+}
+
+function showDayPosts(dateStr) {
+  const dayPosts = posts.filter(p => p.scheduled_at?.startsWith(dateStr));
+  if (!dayPosts.length) { alert(`На ${dateStr} нет запланированных публикаций`); return; }
+  alert(`Публикации на ${dateStr}:\n\n` +
+    dayPosts.map((p, i) =>
+      `${i + 1}. ${p.title} (${STATUS_LABELS[p.status_id]?.label || '—'})`
+    ).join('\n')
+  );
+}
+
+// ─── TAGS ─────────────────────────────────────────────────────────────────────
+
+async function renderTags() {
+  document.getElementById('rec_header').innerHTML =
+    `<h1 class="text-2xl font-semibold text-gray-900">Управление тегами</h1>`;
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `<p class="text-gray-400">Загрузка...</p>`;
+
+  const tags = await loadTags();
+
+  main.innerHTML = `
+    <div class="bg-white rounded-3xl p-8">
+      <div class="flex gap-3 mb-8">
+        <input id="newTagInput" type="text" placeholder="Новый тег"
+               class="flex-1 px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+        <button onclick="addNewTag()"
+                class="bg-emerald-600 text-white px-8 rounded-2xl hover:bg-emerald-700">
+          Добавить
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-3" id="tagsContainer">
+        ${tags.length
+          ? tags.map(tag => `
+              <div class="group bg-gray-100 hover:bg-gray-200 transition px-5 py-2.5 rounded-2xl flex items-center gap-2">
+                <span class="font-medium">#${tag.name}</span>
+                <span onclick="deleteTag(${tag.id}, '${tag.name}')"
+                      class="hidden group-hover:inline text-red-500 cursor-pointer text-lg leading-none">×</span>
+              </div>`).join('')
+          : '<p class="text-gray-400">Теги не найдены</p>'}
+      </div>
+    </div>
+  `;
+}
+
+async function addNewTag() {
+  const input = document.getElementById('newTagInput');
+  const name  = input.value.trim().toLowerCase();
+  if (!name) return;
+
+  const res = await apiFetch('/tags/', {
+    method: 'POST',
+    body: JSON.stringify({ name })
+  });
+
+  if (res && res.ok) {
+    input.value = '';
+    renderTags();
+  } else {
+    const err = res ? await res.json() : null;
+    alert(err?.detail || 'Ошибка при создании тега');
+  }
+}
+
+async function deleteTag(id, name) {
+  if (!confirm(`Удалить тег "#${name}"?`)) return;
+  const res = await apiFetch(`/tags/${id}`, { method: 'DELETE' });
+  if (res && (res.ok || res.status === 204)) {
+    renderTags();
+  } else {
+    alert('Ошибка при удалении тега');
+  }
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+
+function loadPage(page) {
+  document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+  if      (page === 'dashboard')  renderDashboard();
+  else if (page === 'posts')      renderPosts();
+  else if (page === 'new-post')   renderNewPost();
+  else if (page === 'moderation') renderModeration();
+  else if (page === 'calendar')   renderCalendar();
+  else if (page === 'tags')       renderTags();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!checkAuth()) return;
+
+  currentUser = await fetchCurrentUser();
+  if (!currentUser) return;
+
+  renderSidebar();
+  loadPage('dashboard');
+
+  const nameEl = document.getElementById('name');
+  if (nameEl) nameEl.innerHTML =
+    `<div class="text-sm font-medium">${currentUser.username}</div>`;
+});
+
+--------------------------
+
+web\js\script_login.js-------
+const API = '/api/v1';
+
+let isLogin = true;
+
+function toggleForm() {
+    isLogin = !isLogin;
+    document.getElementById('formTitle').textContent = isLogin ? 'Войти' : 'Регистрация';
+    document.getElementById('formSubtitle').textContent = isLogin ? 'Войдите в аккаунт' : 'Создайте новый аккаунт';
+    document.getElementById('name').classList.toggle('hidden', isLogin);
+    document.getElementById('submitBtn').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
+    document.getElementById('toggleBtn').textContent = isLogin ? 'Нет аккаунта? Регистрация' : 'Уже есть аккаунт? Войти';
+    document.getElementById('errorMsg').textContent = '';
+}
+
+async function submitForm() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const name = document.getElementById('name').value.trim();
+
+    if (!email || !password) { showError('Заполните все поля'); return; }
+
+    if (isLogin) {
+        await login(email, password);
+    } else {
+        if (!name) { showError('Введите имя'); return; }
+        await register(name, email, password);
+    }
+}
+
+async function login(email, password) {
+    try {
+        const res = await fetch(`${API}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { showError(data.detail || 'Ошибка входа'); return; }
+        localStorage.setItem('token', data.access_token);
+        window.location.href = 'index.html';
+    } catch (e) {
+        showError('Ошибка соединения с сервером');
+    }
+}
+
+async function register(name, email, password) {
+    try {
+        const res = await fetch(`${API}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: name, email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { showError(data.detail || 'Ошибка регистрации'); return; }
+        alert('Регистрация успешна! Войдите в аккаунт.');
+        toggleForm();
+    } catch (e) {
+        showError('Ошибка соединения с сервером');
+    }
+}
+
+function showError(msg) {
+    document.getElementById('errorMsg').textContent = msg;
+}
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    const currentPage = window.location.pathname.split('/').pop();
+    if (token && currentPage === 'login.html') {
+        window.location.href = 'index.html';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', checkAuth);
+
+--------------------------
