@@ -70,7 +70,7 @@
 </div>
 
 <script>
-const API = '/api/v1/';
+const API = '/api/v1';
 let currentUser = null;
 let calendarMonth = new Date().getMonth();
 let calendarYear  = new Date().getFullYear();
@@ -81,7 +81,9 @@ function getToken() { return localStorage.getItem('token'); }
 
 async function apiFetch(path, options = {}) {
   const token = getToken();
-  const res = await fetch(`${API}${path}`, {
+  // Убираем двойной слэш: нормализуем путь
+  const url = `${API}/${path}`.replace(/\/+/g, '/');
+  const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
