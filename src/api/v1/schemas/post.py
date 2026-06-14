@@ -32,6 +32,20 @@ class PostOut(BaseModel):
     status_id:    int
     status:       Optional[StatusOut]= None
     scheduled_at: Optional[datetime] = None
+
+    @field_validator("scheduled_at", mode="before")
+    @classmethod
+    def parse_scheduled_at(cls, v):
+        if v is None:
+            return v
+        if isinstance(v, datetime):
+            # Если datetime без timezone, считаем что это UTC
+            if v.tzinfo is None:
+                from datetime import timezone
+                v = v.replace(tzinfo=timezone.utc)
+            return v
+        return v
+
     created_at:   Optional[datetime] = None
     updated_at:   Optional[datetime] = None
     tags:         list[TagOut]        = []

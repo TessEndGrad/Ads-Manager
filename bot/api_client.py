@@ -74,3 +74,12 @@ class AdsAPIClient:
             "GET", "/posts/?status_id=2&page_size=20", token=token
         )
         return data if status == 200 else None
+    
+    async def add_telegram_chat(self, chat_id: str, title: str, chat_type: str):
+        """Отправить информацию о добавлении бота в чат"""
+        # Используем токен бота из настроек
+        status, data = await self._request(
+            "POST", "/telegram/chats/register",
+            json={"chat_id": chat_id, "title": title, "chat_type": chat_type}
+        )
+        return status == 200

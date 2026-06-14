@@ -43,6 +43,7 @@ class User(Base):
     social_accounts: Mapped[List["SocialAccount"]] = relationship(back_populates="user")
     posts:           Mapped[List["Post"]]          = relationship(back_populates="author")
     approvals_given: Mapped[List["Approval"]]      = relationship(back_populates="manager")
+    telegram_channels: Mapped[List["TelegramChannel"]] = relationship(back_populates="user")
 
 
 class SocialAccount(Base):
@@ -171,3 +172,28 @@ class TelegramPublication(Base):
     error:        Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     post: Mapped["Post"] = relationship(back_populates="telegram_publications")
+
+
+class TelegramChat(Base):
+    __tablename__ = "telegram_chats"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    chat_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(255))
+    chat_type: Mapped[str] = mapped_column(String(20))  # private, group, supergroup, channel
+    added_by_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+    
+    user: Mapped["User"] = relationship()
+
+class TelegramChannel(Base):
+    __tablename__ = "telegram_channels"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    chat_id: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    title: Mapped[str] = mapped_column(String(255))
+    chat_type: Mapped[str] = mapped_column(String(20), default="channel")  # channel
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.current_timestamp())
+    
+    user: Mapped["User"] = relationship(back_populates="telegram_channels")

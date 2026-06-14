@@ -85,7 +85,8 @@ class PostService:
         if data.scheduled_at is not None:
             scheduled_at = data.scheduled_at
             if scheduled_at.tzinfo is not None:
-                scheduled_at = scheduled_at.replace(tzinfo=None)
+                from datetime import timezone
+                scheduled_at = scheduled_at.astimezone(timezone.utc).replace(tzinfo=None)
             post.scheduled_at = scheduled_at
 
         if data.tag_ids is not None:

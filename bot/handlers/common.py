@@ -2,6 +2,9 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
+from aiogram.types import ChatMemberUpdated
+from aiogram.filters import ChatMemberUpdatedFilter
+from aiogram.enums import ChatMemberStatus
 
 from bot.states import AuthStates
 from bot.api_client import AdsAPIClient
@@ -90,4 +93,28 @@ async def profile(message: Message):
         f"Email: {me['email']}\n"
         f"Роль: {'Менеджер' if me['role_id'] == 1 else 'Пользователь'}",
         parse_mode="HTML"
+    )
+
+
+
+
+# Обработка добавления бота в чат
+@router.my_chat_member(ChatMemberUpdatedFilter(
+    member_status_changed=(ChatMemberStatus.LEFT, ChatMemberStatus.MEMBER)
+))
+async def bot_added_to_chat(event: ChatMemberUpdated):
+    chat_id = event.chat.id
+    chat_title = event.chat.title
+    chat_type = event.chat.type
+    
+    # Отправляем информацию на API для сохранения
+    await client.add_telegram_chat(
+        chat_id=str(chat_id),
+        title=chat_title,
+        chat_type=chat_type
+    )
+    
+    await event.bot.send_message(
+        chat_id=chat_id,
+        text="✅ Бот успешно добавлен! Теперь вы можете публиковать посты в этот чат через Ads Manager."
     )
