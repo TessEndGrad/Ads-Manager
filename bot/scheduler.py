@@ -32,29 +32,32 @@ async def mark_published(api_token: str, pub_id: int, success: bool, error: str 
         )
 
 
+from aiogram.types import FSInputFile, InputMediaPhoto, InputMediaVideo
+
 async def publish_post(bot: Bot, publication: dict):
     post = publication["post"]
     chat_id = publication["chat_id"]
     title   = post.get("title") or ""
     content = post.get("content") or ""
     media   = post.get("media_items", [])
-    tags    = post.get("tags", [])  # Получаем теги
+    tags    = post.get("tags", [])
 
     # Формируем текст с хэштегами
     caption_parts = []
-
     if title:
         caption_parts.append(f"<b>{title}</b>")
-
     if content:
         caption_parts.append(content)
-
-    # Добавляем хэштеги если они есть
     if tags:
         hashtags = " ".join([f"#{tag['name']}" for tag in tags])
         caption_parts.append(hashtags)
-
     caption = "\n\n".join(caption_parts)
+
+    def get_file(file_url: str):
+        """Возвращает FSInputFile для локального файла или URL для внешнего"""
+        if file_url.startswith('/uploads/'):
+            return FSInputFile(f"/app{file_url}")
+        return file_url
 
     try:
         if not media:
@@ -62,21 +65,21 @@ async def publish_post(bot: Bot, publication: dict):
             await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML")
         elif len(media) == 1:
             item = media[0]
-            file_url = f"{bot_settings.MEDIA_BASE_URL}{item['file_url']}"
+            file = get_file(item['file_url'])
             if item["media_type"] == "image":
-                await bot.send_photo(chat_id=chat_id, photo=file_url, caption=caption, parse_mode="HTML")
+                await bot.send_photo(chat_id=chat_id, photo=file, caption=caption, parse_mode="HTML")
             elif item["media_type"] == "video":
-                await bot.send_video(chat_id=chat_id, video=file_url, caption=caption, parse_mode="HTML")
+                await bot.send_video(chat_id=chat_id, video=file, caption=caption, parse_mode="HTML")
         else:
             # Медиагруппа
             media_group = []
             for i, item in enumerate(media[:10]):  # Telegram лимит — 10
-                file_url = f"{bot_settings.MEDIA_BASE_URL}{item['file_url']}"
+                file = get_file(item['file_url'])
                 cap = caption if i == 0 else None
                 if item["media_type"] == "image":
-                    media_group.append(InputMediaPhoto(media=file_url, caption=cap, parse_mode="HTML"))
+                    media_group.append(InputMediaPhoto(media=file, caption=cap, parse_mode="HTML"))
                 elif item["media_type"] == "video":
-                    media_group.append(InputMediaVideo(media=file_url, caption=cap, parse_mode="HTML"))
+                    media_group.append(InputMediaVideo(media=file, caption=cap, parse_mode="HTML"))
 
             await bot.send_media_group(chat_id=chat_id, media=media_group)
 

@@ -33,9 +33,11 @@ async def seed():
         await db.commit()
 
         # Default users
+        # role_id=1 — менеджер, role_id=2 — обычный пользователь
         for username, email, role_id in [
-            ("manager", "manager@demo.ru", 1),
-            ("user1",   "user@demo.ru",    2),
+            ("manager", "manager@demo.ru", 1),   # менеджер-человек
+            ("user1",   "user@demo.ru",    2),   # обычный пользователь
+            ("bot",     "bot@demo.ru",     1),   # ← технический пользователь для бота
         ]:
             exists = await db.execute(select(User).where(User.username == username))
             if not exists.scalars().first():

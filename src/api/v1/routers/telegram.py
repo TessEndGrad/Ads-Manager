@@ -72,10 +72,14 @@ async def get_pending_publications(
             TelegramPublication.scheduled_at <= now,
         )
         .options(
-            selectinload(TelegramPublication.post).selectinload(Post.media_items)
+            selectinload(TelegramPublication.post)
+                .selectinload(Post.media_items),
+            selectinload(TelegramPublication.post)
+                .selectinload(Post.tags),  # ← ДОБАВЛЕНО: загрузка тегов
         )
     )
-    publications = result.scalars().all()
+    publications = result.scalars().unique().all()  # ← Добавлен .unique()
+    
     return [
         {
             "id": p.id,
@@ -111,12 +115,23 @@ async def mark_publication(
     pub = result.scalars().first()
     if not pub:
         return {"ok": False}
+    
     if body.get("success"):
         pub.status = "done"
         pub.published_at = datetime.utcnow()
+        
+        # Обновляем статус поста на "published" (status_id=4)
+        post_result = await db.execute(
+            select(Post).where(Post.id == pub.post_id)
+        )
+        post = post_result.scalars().first()
+        if post:
+            post.status_id = 4  # STATUS_PUBLISHED
+            await db.commit()
     else:
         pub.status = "failed"
         pub.error = body.get("error")
+    
     await db.commit()
     return {"ok": True}
 
