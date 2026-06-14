@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ConfigDict
 
 
 class TagOut(BaseModel):
@@ -71,3 +71,17 @@ class PostUpdate(BaseModel):
 
 class ScheduleRequest(BaseModel):
     scheduled_at: datetime
+
+class TelegramScheduleRequest(BaseModel):
+    chat_id: str         # например "-1001234567890"
+    scheduled_at: datetime
+
+class TelegramPublicationOut(BaseModel):
+    id: int
+    post_id: int
+    chat_id: str
+    scheduled_at: datetime
+    published_at: Optional[datetime] = None
+    status: str
+
+    model_config = ConfigDict(from_attributes=True)

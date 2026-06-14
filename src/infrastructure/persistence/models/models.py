@@ -107,6 +107,7 @@ class Post(Base):
     tags:        Mapped[List["Tag"]]         = relationship(secondary=post_tags_table, back_populates="posts")
     publications:Mapped[List["Publication"]] = relationship(back_populates="post", cascade="all, delete-orphan")
     approvals:   Mapped[List["Approval"]]    = relationship(back_populates="post", cascade="all, delete-orphan")
+    telegram_publications: Mapped[list["TelegramPublication"]] = relationship(back_populates="post", cascade="all, delete-orphan")
 
 
 class Media(Base):
@@ -156,3 +157,17 @@ class Approval(Base):
 
     post:    Mapped["Post"] = relationship(back_populates="approvals")
     manager: Mapped["User"] = relationship(back_populates="approvals_given")
+
+
+class TelegramPublication(Base):
+    __tablename__ = "telegram_publications"
+
+    id:           Mapped[int]      = mapped_column(Integer, primary_key=True)
+    post_id:      Mapped[int]      = mapped_column(ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    chat_id:      Mapped[str]      = mapped_column(String(100), nullable=False)  # ID группы
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    status:       Mapped[str]      = mapped_column(String(20), default="pending")  # pending / done / failed
+    error:        Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    post: Mapped["Post"] = relationship(back_populates="telegram_publications")

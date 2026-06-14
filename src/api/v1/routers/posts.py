@@ -7,11 +7,18 @@ from typing import Optional, Literal
 
 from fastapi import APIRouter, Depends, Query
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.dependencies import get_db, get_current_user
 from src.api.v1.dependencies import get_post_service
 from src.api.v1.schemas.post import PostOut, PostListResponse, PostCreate, PostUpdate, ScheduleRequest
+from src.infrastructure.persistence.models.models import Post
 from src.core.dependencies import get_current_user
 from src.infrastructure.persistence.repositories.post_repository import PostFilters
 from src.modules.posts.service import PostService
+from src.api.v1.schemas.post import TelegramScheduleRequest, TelegramPublicationOut
+from src.infrastructure.persistence.models.models import TelegramPublication
 
 router = APIRouter(prefix="/posts", tags=["Посты"])
 
@@ -160,3 +167,57 @@ async def upload_media(
 
     file_url = f"/uploads/{filename}"
     return await service.add_media(post_id, file_url, media_type, current_user)
+
+
+@router.post(
+    "/{post_id}/schedule-telegram",
+    response_model=TelegramPublicationOut,
+    status_code=201,
+    summary="Запланировать публикацию в Telegram"
+)
+async def schedule_telegram(
+    post_id: int,
+    body: TelegramScheduleRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    # Проверяем что пост существует и одобрен
+    result = await db.execute(select(Post).where(Post.id == post_id))
+    post = result.scalars().first()
+    if not post:
+        raise HTTPException(404, "Пост не найден")
+    if post.status_id != 3:  # STATUS_APPROVED
+        raise HTTPException(400, "Публиковать можно только одобренные посты")
+    if post.author_id != current_user.id and current_user.role_id != 1:
+        raise HTTPException(403, "Нет доступа")
+
+    scheduled_at = body.scheduled_at
+    if scheduled_at.tzinfo is not None:
+        scheduled_at = scheduled_at.replace(tzinfo=None)
+
+    pub = TelegramPublication(
+        post_id=post_id,
+        chat_id=body.chat_id,
+        scheduled_at=scheduled_at,
+        status="pending"
+    )
+    db.add(pub)
+    await db.commit()
+    await db.refresh(pub)
+    return pub
+
+
+@router.get(
+    "/{post_id}/telegram-status",
+    response_model=list[TelegramPublicationOut],
+    summary="Статус публикаций в Telegram"
+)
+async def telegram_status(
+    post_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    result = await db.execute(
+        select(TelegramPublication).where(TelegramPublication.post_id == post_id)
+    )
+    return result.scalars().all()

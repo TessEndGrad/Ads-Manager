@@ -230,6 +230,39 @@ function postCard(p) {
   `;
 }
 
+function renderTelegramButton(post) {
+    if (post.status_id !== 3) return '';
+    return `
+        <button 
+            onclick="scheduleTelegram(${post.id})"
+            class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl transition">
+            <i class="fab fa-telegram"></i> Выложить в Telegram
+        </button>
+    `;
+}
+
+async function scheduleTelegram(postId) {
+    const chatId = prompt("ID Telegram-группы (например: -1001234567890):");
+    if (!chatId) return;
+
+    const dateStr = prompt("Дата и время публикации (например: 2026-06-14T18:00):");
+    if (!dateStr) return;
+
+    const res = await apiFetch(`posts/${postId}/schedule-telegram`, {
+        method: 'POST',
+        body: JSON.stringify({
+            chat_id: chatId,
+            scheduled_at: new Date(dateStr).toISOString()
+        })
+    });
+
+    if (res && res.ok) {
+        alert('✅ Публикация запланирована!');
+    } else {
+        alert('❌ Ошибка при планировании');
+    }
+}
+
 // ── View single post ──────────────────────────────────────────────────────────
 async function viewPost(id) {
   const res = await apiFetch(`/posts/${id}`);
