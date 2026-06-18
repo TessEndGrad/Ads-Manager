@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ads Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50">
+
+<!-- Шапка -->
+<header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+  <div class="flex items-center gap-8">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold">A</div>
+      <span class="text-xl font-semibold text-gray-900">Ads Manager</span>
+    </div>
+    <div class="relative w-80">
+      <input type="text" id="searchInput" placeholder="Поиск публикаций..."
+             oninput="onSearch(this.value)"
+             class="w-full bg-gray-100 border border-gray-200 rounded-xl pl-9 py-2 text-sm focus:outline-none focus:border-emerald-400">
+      <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <button onclick="openCreateModal()"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2 rounded-xl flex items-center gap-2 transition text-sm">
+      <i class="fas fa-plus"></i> Новая публикация
+    </button>
+    <span class="text-sm text-gray-600" id="headerUsername"></span>
+    <button onclick="logout()" class="text-sm text-gray-500 hover:text-red-500 transition">
+      <i class="fas fa-sign-out-alt"></i> Выход
+    </button>
+  </div>
+</header>
+
+<div class="flex h-[calc(100vh-57px)]">
+  <!-- Сайдбар -->
+  <aside class="w-56 bg-white border-r border-gray-200 flex flex-col py-4 px-3 gap-1">
+    <button onclick="loadPage('dashboard')" id="nav-dashboard" class="nav-btn active">
+      <i class="fas fa-home w-5"></i> Главная
+    </button>
+    <button onclick="loadPage('posts')" id="nav-posts" class="nav-btn">
+      <i class="fas fa-file-alt w-5"></i> Все публикации
+    </button>
+    <button onclick="loadPage('calendar')" id="nav-calendar" class="nav-btn">
+      <i class="fas fa-calendar w-5"></i> Календарь
+    </button>
+    <button onclick="loadPage('tags')" id="nav-tags" class="nav-btn">
+      <i class="fas fa-tags w-5"></i> Теги
+    </button>
+    <div id="nav-manager-section"></div>
+  </aside>
+
+  <!-- Основной контент -->
+  <main class="flex-1 overflow-y-auto p-6" id="mainContent">
+    <div class="flex items-center justify-center h-full text-gray-400">
+      <i class="fas fa-spinner fa-spin text-3xl"></i>
+    </div>
+  </main>
+</div>
+
+<!-- Модальное окно -->
+<div id="modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1';
+let currentUser = null;
+let calendarMonth = new Date().getMonth();
+let calendarYear  = new Date().getFullYear();
+let searchTimer   = null;
+
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+function getToken() { return localStorage.getItem('token'); }
+
+async function apiFetch(path, options = {}) {
+  const token = getToken();
+  // Убираем двойной слэш: нормализуем путь
+  const url = `${API}/${path}`.replace(/\/+/g, '/');
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) { logout(); return null; }
+  return res;
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  window.location.href = 'login.html';
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function setActiveNav(page) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`nav-${page}`);
+  if (btn) btn.classList.add('active');
+}
+
+function loadPage(page) {
+  setActiveNav(page);
+  if (page === 'dashboard')  renderDashboard();
+  else if (page === 'posts') renderPosts({});
+  else if (page === 'calendar') renderCalendar();
+  else if (page === 'tags')  renderTags();
+  else if (page === 'moderation') renderModeration();
+}
+
+function onSearch(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => renderPosts({ search: val }), 400);
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+async function renderDashboard() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `<div class="flex items-center justify-center h-full"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>`;
+  const res = await apiFetch('/posts/?page_size=100');
+  if (!res) return;
+  const data = await res.json();
+  const all   = data.items || [];
+  const draft = all.filter(p => p.status_id === 1).length;
+  const mod   = all.filter(p => p.status_id === 2).length;
+  const pub   = all.filter(p => p.status_id === 4).length;
+
+  main.innerHTML = `
+    <h1 class="text-2xl font-semibold mb-6">Добро пожаловать, ${currentUser.username}!</h1>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <p class="text-gray-500 text-sm mb-1">Всего публикаций</p>
+        <p class="text-4xl font-bold">${data.total}</p>
+      </div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <p class="text-gray-500 text-sm mb-1">На модерации</p>
+        <p class="text-4xl font-bold text-amber-500">${mod}</p>
+      </div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <p class="text-gray-500 text-sm mb-1">Опубликовано</p>
+        <p class="text-4xl font-bold text-emerald-600">${pub}</p>
+      </div>
+    </div>
+    <h2 class="text-lg font-semibold mb-3">Последние публикации</h2>
+    <div class="space-y-3">${all.slice(0,5).map(postCard).join('')}</div>
+  `;
+}
+
+// ── Posts list ────────────────────────────────────────────────────────────────
+// Состояние фильтров — вне функции
+let postFilters = { status_id: '', order_by: 'created_at' };
+
+async function renderPosts(extra) {
+    // Обновляем состояние если пришли новые значения
+    if (extra) Object.assign(postFilters, extra);
+
+    setActiveNav('posts');
+    const main = document.getElementById('mainContent');
+    main.innerHTML = `<div class="flex items-center justify-center h-full"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>`;
+
+    const params = new URLSearchParams({ page: 1, pagesize: 50, orderby: postFilters.order_by, orderdir: 'desc' });
+    if (postFilters.status_id) params.set('status_id', postFilters.status_id);
+
+    const res = await apiFetch(`/posts?${params}`);
+    if (!res) return;
+    const data = await res.json();
+
+    // Опции статусов с нужным selected
+    const statusOptions = [
+        { value: '',  label: 'Все статусы' },
+        { value: '1', label: 'Черновик' },
+        { value: '2', label: 'На модерации' },
+        { value: '3', label: 'Одобрен' },
+        { value: '4', label: 'Опубликован' },
+        { value: '5', label: 'Отклонён' },
+    ].map(o => `<option value="${o.value}" ${postFilters.status_id === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+
+    // Опции сортировки с нужным selected
+    const orderOptions = [
+        { value: 'created_at',   label: 'По дате создания' },
+        { value: 'scheduled_at', label: 'По дате публикации' },
+        { value: 'title',        label: 'По заголовку' },
+        { value: 'status_id',    label: 'По статусу' },
+    ].map(o => `<option value="${o.value}" ${postFilters.order_by === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+
+    main.innerHTML = `
+        <div class="flex items-center justify-between mb-5">
+            <h1 class="text-2xl font-semibold">Публикации <span class="text-gray-400 text-base font-normal">${data.total}</span></h1>
+            <div class="flex gap-3">
+                <select onchange="renderPosts({status_id: this.value})" class="border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                    ${statusOptions}
+                </select>
+                <select onchange="renderPosts({order_by: this.value})" class="border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                    ${orderOptions}
+                </select>
+            </div>
+        </div>
+        <div class="space-y-3">${data.items.length ? data.items.map(postCard).join('') : '<p class="text-gray-400">Нет постов</p>'}</div>
+    `;
+}
+
+function statusBadge(statusId, statusName) {
+  const map = {1:'bg-gray-100 text-gray-600', 2:'bg-amber-100 text-amber-700',
+               3:'bg-blue-100 text-blue-700', 4:'bg-emerald-100 text-emerald-700', 5:'bg-red-100 text-red-600'};
+  const names = {1:'Черновик',2:'Модерация',3:'Одобрен',4:'Опубликован',5:'Отклонён'};
+  return `<span class="text-xs px-3 py-1 rounded-full font-medium ${map[statusId]||'bg-gray-100'}">${statusName||names[statusId]||'—'}</span>`;
+}
+
+function postCard(p) {
+  const tags = (p.tags||[]).map(t=>`<span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">#${t.name}</span>`).join('');
+  const date = p.scheduled_at 
+    ? new Date(p.scheduled_at.endsWith('Z') ? p.scheduled_at : p.scheduled_at + 'Z')
+        .toLocaleString('ru-RU')
+    : '';
+  return `
+    <div onclick="viewPost(${p.id})" class="post-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition">
+      <div class="flex justify-between items-start gap-3">
+        <h3 class="font-semibold text-gray-900 leading-tight">${p.title||'(без названия)'}</h3>
+        ${statusBadge(p.status_id, p.status?.name)}
+      </div>
+      ${p.content ? `<p class="text-gray-500 text-sm mt-2 line-clamp-2">${p.content.substring(0,120)}</p>` : ''}
+      <div class="flex flex-wrap gap-1.5 mt-3">${tags}</div>
+      ${date ? `<p class="text-xs text-gray-400 mt-3"><i class="far fa-clock mr-1"></i>${date}</p>` : ''}
+    </div>
+  `;
+}
+
+// ── Helper для работы с датой и временем ──────────────────────────────────────
+// Конвертирует UTC время из БД в локальное время пользователя
+function toLocalDateTime(utcString) {
+    if (!utcString) return null;
+    // Если строка уже содержит timezone info, просто создаём Date
+    if (utcString.includes('Z') || utcString.includes('+') || utcString.includes('-')) {
+        return new Date(utcString);
+    }
+    // Иначе считаем что это UTC и добавляем 'Z'
+    return new Date(utcString + 'Z');
+}
+
+// Форматирует дату в локальном времени
+function formatLocalDateTime(dateString) {
+    const date = toLocalDateTime(dateString);
+    if (!date) return '';
+    return date.toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// ── Telegram публикация ───────────────────────────────────────────────────────
+function renderTelegramButton(post) {
+    if (post.status_id !== 3) return '';
+    return `
+        <button 
+            onclick="scheduleTelegram(${post.id})"
+            class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-xl transition">
+            <i class="fab fa-telegram"></i> Выложить в Telegram
+        </button>
+    `;
+}
+
+async function scheduleTelegram(postId) {
+    // Загружаем пост
+    const postRes = await apiFetch(`/posts/${postId}`);
+    if (!postRes || !postRes.ok) {
+        alert('❌ Не удалось загрузить пост');
+        return;
+    }
+    const post = await postRes.json();
+
+    // Получаем список каналов
+    const channelsRes = await apiFetch('/telegram/channels');
+    const channels = channelsRes && channelsRes.ok ? await channelsRes.json() : [];
+
+    if (!channels || channels.length === 0) {
+        const botUsername = 'YourBot'; // ЗАМЕНИТЕ на username вашего бота!
+
+        showModal(`
+            <div class="p-6">
+                <h2 class="text-xl font-semibold mb-4">📋 Нет добавленных каналов</h2>
+                <div class="space-y-4">
+                    <div class="bg-blue-50 p-4 rounded-xl">
+                        <p class="text-sm text-gray-700 mb-3">
+                            Чтобы публиковать посты, добавьте бота в канал:
+                        </p>
+                        <ol class="list-decimal list-inside space-y-2 text-sm text-gray-600">
+                            <li>Добавьте бота @${botUsername} как АДМИНИСТРАТОРА в канал</li>
+                            <li>Дайте право "Публикация сообщений"</li>
+                            <li>Узнайте ID канала (через @getmyid_bot или веб-версию)</li>
+                            <li>Введите ID канала ниже</li>
+                        </ol>
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="newChannelId" type="text" placeholder="ID канала (например: -1001234567890)"
+                               class="flex-1 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+                        <input id="newChannelTitle" type="text" placeholder="Название канала"
+                               class="flex-1 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+                    </div>
+                    <button onclick="registerChannel(${postId})"
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium">
+                        Добавить канал
+                    </button>
+                </div>
+            </div>
+        `);
+        return;
+    }
+
+    // Формируем превью
+    const tags = (post.tags || []).map(t => `#${t.name}`).join(' ');
+    const previewText = `${post.title || ''}\n\n${(post.content || '').substring(0, 100)}${(post.content || '').length > 100 ? '...' : ''}${tags ? '\n\n' + tags : ''}`;
+    const scheduledText = post.scheduled_at
+        ? formatLocalDateTime(post.scheduled_at)
+        : 'не указано';
+
+    showModal(`
+        <div class="p-6">
+            <h2 class="text-xl font-semibold mb-4">📱 Публикация в Telegram</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-sm text-gray-500 mb-2 block">Выберите канал:</label>
+                    <select id="tgChannelSelect" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+                        ${channels.map(c => `
+                            <option value="${c.chat_id}">${c.title || 'Без названия'}</option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-1">📅 Дата публикации:</p>
+                    <p class="text-sm font-medium">${scheduledText}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-1">📝 Превью сообщения:</p>
+                    <p class="text-sm text-gray-700 whitespace-pre-wrap">${previewText}</p>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="confirmTelegramSchedule(${postId})"
+                            id="btnConfirmTg"
+                            class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-medium transition">
+                        Запланировать
+                    </button>
+                    <button onclick="closeModal()"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition">
+                        Отмена
+                    </button>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+async function confirmTelegramSchedule(postId) {
+    const chatId = document.getElementById('tgChannelSelect').value;
+
+    if (!chatId) {
+        alert('❌ Выберите канал');
+        return;
+    }
+
+    // Показываем загрузку
+    const btn = document.getElementById('btnConfirmTg');
+    btn.textContent = '⏳ Отправка...';
+    btn.disabled = true;
+
+    try {
+        // Загружаем пост чтобы получить scheduled_at
+        const postRes = await apiFetch(`/posts/${postId}`);
+        if (!postRes || !postRes.ok) {
+            alert('❌ Не удалось загрузить пост');
+            btn.textContent = 'Запланировать';
+            btn.disabled = false;
+            return;
+        }
+
+        const post = await postRes.json();
+        const scheduledAt = post.scheduled_at || new Date().toISOString();
+
+        const res = await apiFetch(`posts/${postId}/schedule-telegram`, {
+            method: 'POST',
+            body: JSON.stringify({
+                chat_id: chatId,
+                scheduled_at: scheduledAt
+            })
+        });
+
+        if (res && res.ok) {
+            closeModal();
+            alert('✅ Публикация в канал запланирована!');
+            viewPost(postId);
+        } else {
+            const err = res ? await res.json() : null;
+            alert('❌ Ошибка: ' + (err?.detail || 'Неизвестная ошибка'));
+            btn.textContent = 'Запланировать';
+            btn.disabled = false;
+        }
+    } catch (e) {
+        alert('❌ Ошибка сети: ' + e.message);
+        btn.textContent = 'Запланировать';
+        btn.disabled = false;
+    }
+}
+
+async function registerChannel(postId) {
+    const chatId = document.getElementById('newChannelId').value.trim();
+    const title = document.getElementById('newChannelTitle').value.trim();
+
+    if (!chatId) {
+        alert('Введите ID канала');
+        return;
+    }
+
+    const res = await apiFetch('/telegram/channels/register', {
+        method: 'POST',
+        body: JSON.stringify({
+            chat_id: chatId,
+            title: title || 'Канал',
+            chat_type: 'channel'
+        })
+    });
+
+    if (res && res.ok) {
+        alert('✅ Канал добавлен!');
+        closeModal();
+        scheduleTelegram(postId);
+    } else {
+        const err = res ? await res.json() : null;
+        alert('❌ Ошибка: ' + (err?.detail || 'Неизвестная ошибка'));
+    }
+}
+
+// Уведомление вместо alert
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg text-white font-medium transition-all transform translate-x-0 ${
+        type === 'success' ? 'bg-emerald-600' : 'bg-red-600'
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// ── View single post ──────────────────────────────────────────────────────────
+async function viewPost(id) {
+  const res = await apiFetch(`/posts/${id}`);
+  if (!res || !res.ok) return;
+  const p = await res.json();
+  const isManager = currentUser.role_id === 1;
+  const isOwner   = p.author_id === currentUser.id;
+
+  const media = (p.media_items||[]).map(m =>
+    m.media_type === 'image'
+      ? `<img src="${m.file_url}" class="w-full rounded-xl mt-4 object-cover max-h-64">`
+      : `<video src="${m.file_url}" controls class="w-full rounded-xl mt-4"></video>`
+  ).join('');
+
+  const tags = (p.tags||[]).map(t=>`<span class="text-sm bg-gray-100 px-3 py-1 rounded-full">#${t.name}</span>`).join('');
+
+  let actions = '';
+  if (p.status_id === 1 && isOwner)
+    actions += `<button onclick="submitPost(${p.id})" class="btn-success">Отправить на модерацию</button>`;
+  if (p.status_id === 2 && isManager) {
+    actions += `<button onclick="approvePost(${p.id})" class="btn-success">Одобрить</button>`;
+    actions += `<button onclick="rejectPost(${p.id})"  class="btn-danger">Отклонить</button>`;
+  }
+  if ((p.status_id === 1 || p.status_id === 5) && isOwner)
+    actions += `<button onclick="openEditModal(${p.id})" class="btn-secondary">Редактировать</button>`;
+  if (isOwner || isManager)
+    actions += `<button onclick="confirmDelete(${p.id})" class="btn-danger">Удалить</button>`;
+
+  if (p.status_id === 3) {
+    actions += renderTelegramButton(p);
+  }
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+    <button onclick="loadPage('posts')" class="mb-5 text-emerald-600 hover:underline text-sm flex items-center gap-1">
+      <i class="fas fa-arrow-left"></i> Назад
+    </button>
+    <div class="bg-white rounded-2xl p-8 max-w-2xl shadow-sm border border-gray-100">
+      <div class="flex justify-between items-start mb-4">
+        <h1 class="text-2xl font-bold">${p.title||'(без названия)'}</h1>
+        ${statusBadge(p.status_id, p.status?.name)}
+      </div>
+      ${p.scheduled_at ? `<p class="text-sm text-gray-500 mb-4"><i class="far fa-clock mr-1"></i>${new Date(p.scheduled_at.endsWith('Z') ? p.scheduled_at : p.scheduled_at + 'Z').toLocaleString('ru-RU')}</p>` : ''}
+      ${media}
+      ${p.content ? `<div class="mt-5 text-gray-700 leading-relaxed whitespace-pre-wrap">${p.content}</div>` : ''}
+      ${tags ? `<div class="flex flex-wrap gap-2 mt-5">${tags}</div>` : ''}
+      ${actions ? `<div class="flex flex-wrap gap-3 mt-7 pt-5 border-t border-gray-100">${actions}</div>` : ''}
+    </div>
+  `;
+}
+
+// ── Post actions ──────────────────────────────────────────────────────────────
+async function submitPost(id) {
+  const res = await apiFetch(`/posts/${id}/submit`, { method: 'POST' });
+  if (res && res.ok) { alert('Пост отправлен на модерацию'); viewPost(id); }
+}
+async function approvePost(id) {
+  const res = await apiFetch(`/posts/${id}/approve`, { method: 'POST' });
+  if (res && res.ok) { alert('Пост одобрен'); viewPost(id); }
+}
+async function rejectPost(id) {
+  const res = await apiFetch(`/posts/${id}/reject`, { method: 'POST' });
+  if (res && res.ok) { alert('Пост отклонён'); viewPost(id); }
+}
+async function confirmDelete(id) {
+  if (!confirm('Удалить этот пост?')) return;
+  const res = await apiFetch(`/posts/${id}`, { method: 'DELETE' });
+  if (res && res.status === 204) { loadPage('posts'); }
+}
+
+// ── Moderation page ───────────────────────────────────────────────────────────
+async function renderModeration() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+  const res = await apiFetch('/posts/?status_id=2&page_size=50');
+  if (!res) return;
+  const data = await res.json();
+  main.innerHTML = `
+    <h1 class="text-2xl font-semibold mb-5">Модерация <span class="text-gray-400 text-base font-normal">(${data.total})</span></h1>
+    <div class="space-y-3">${data.items.length ? data.items.map(postCard).join('') : '<p class="text-gray-400">Нет постов на модерации</p>'}</div>
+  `;
+}
+
+// ── Create / Edit modal ───────────────────────────────────────────────────────
+async function openCreateModal() {
+  let tagsRes = await apiFetch('/tags/?limit=30');
+  let allTags = tagsRes && tagsRes.ok ? (await tagsRes.json()) : [];
+  showModal(postForm(null, allTags));
+}
+async function openEditModal(id) {
+  const res = await apiFetch(`/posts/${id}`);
+  const post = res && res.ok ? await res.json() : null;
+  let tagsRes = await apiFetch('/tags/?limit=30');
+  let allTags = tagsRes && tagsRes.ok ? (await tagsRes.json()) : [];
+  showModal(postForm(post, allTags));
+}
+
+function postForm(post, allTags) {
+    const isEdit = !!post;
+    const tagOptions = allTags.map(t =>
+        `<option value="${t.id}" ${post?.tags.some(pt => pt.id === t.id) ? 'selected' : ''}>${t.name}</option>`
+    ).join('');
+
+    
+    const scheduledValue = post?.scheduled_at
+        ? post.scheduled_at.replace('Z', '').slice(0, 16)
+        : '';
+
+    return `<div class="p-6">
+      <h2 class="text-xl font-semibold mb-5">${isEdit ? 'Редактировать' : 'Новая публикация'}</h2>
+      <div class="space-y-4">
+        <input id="fTitle" type="text" value="${post?.title || ''}" placeholder="Заголовок" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+        <textarea id="fContent" rows="5" placeholder="Текст" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400 resize-none">${post?.content || ''}</textarea>
+        <div>
+          <label class="text-sm text-gray-500 mb-1 block">Теги</label>
+          <select id="fTags" multiple class="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none">${tagOptions}</select>
+          <p class="text-xs text-gray-400 mt-1">Удерживайте Ctrl для выбора нескольких</p>
+        </div>
+        <div>
+          <label class="text-sm text-gray-500 mb-1 block">Дата публикации</label>
+          <input id="fDate" type="datetime-local" value="${scheduledValue}" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+        </div>
+        <div>
+          <label class="text-sm text-gray-500 mb-1 block">Медиафайлы (фото/видео)</label>
+          <input id="fMedia" type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm"
+            class="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-400">
+          <p class="text-xs text-gray-400 mt-1">JPEG, PNG, GIF, WebP, MP4, WebM — до 50 МБ каждый</p>
+          ${post?.media_items?.length ? `
+            <div class="flex flex-wrap gap-2 mt-3" id="existingMedia">
+              ${post.media_items.map(m => m.media_type === 'image'
+                ? `<img src="${m.file_url}" class="h-20 w-20 object-cover rounded-lg border border-gray-200">`
+                : `<video src="${m.file_url}" class="h-20 w-20 object-cover rounded-lg border border-gray-200"></video>`
+              ).join('')}
+            </div>` : ''}
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button onclick="${isEdit ? `savePost(${post.id})` : 'createPost()'}" class="flex-1 btn-success">${isEdit ? 'Сохранить' : 'Создать'}</button>
+        <button onclick="closeModal()" class="btn-secondary">Отмена</button>
+      </div>
+    </div>`;
+}
+
+async function uploadMediaFiles(postId) {
+    const input = document.getElementById('fMedia');
+    if (!input || !input.files.length) return;
+    const token = getToken();
+    for (const file of input.files) {
+        const form = new FormData();
+        form.append('file', file);
+        await fetch(`${API}/posts/${postId}/media`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: form,
+        });
+    }
+}
+
+async function createPost() {
+    const body = collectPostForm();
+    const res = await apiFetch('/posts', { method: 'POST', body: JSON.stringify(body) });
+    if (res && res.ok) {
+        const post = await res.json();
+        await uploadMediaFiles(post.id);  // ← загружаем файлы
+        closeModal();
+        loadPage('posts');
+    } else {
+        const e = await res.json();
+        alert(e.detail);
+    }
+}
+
+async function savePost(id) {
+    const body = collectPostForm();
+    const res = await apiFetch(`/posts/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+    if (res && res.ok) {
+        await uploadMediaFiles(id);  // ← загружаем файлы
+        closeModal();
+        viewPost(id);
+    } else {
+        const e = await res.json();
+        alert(e.detail);
+    }
+}
+
+function collectPostForm() {
+    const tagSelect = document.getElementById('fTags');
+    const selectedOptions = [...tagSelect.selectedOptions];
+    // null = не менять теги, [] = очистить все теги
+    const tagIds = selectedOptions.length > 0
+        ? selectedOptions.map(o => parseInt(o.value))
+        : null;
+
+    const date = document.getElementById('fDate').value;
+    return {
+        title: document.getElementById('fTitle').value.trim() || null,
+        content: document.getElementById('fContent').value.trim() || null,
+        scheduled_at: date ? new Date(date).toISOString() : null,
+        tag_ids: tagIds,
+    };
+}
+
+// ── Tags page ─────────────────────────────────────────────────────────────────
+async function renderTags() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+  const res = await apiFetch('/tags/?limit=50');
+  const tags = res && res.ok ? await res.json() : [];
+
+  main.innerHTML = `
+    <h1 class="text-2xl font-semibold mb-5">Теги</h1>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 max-w-lg">
+      <div class="flex gap-3 mb-6">
+        <input id="newTagInput" type="text" placeholder="Новый тег"
+               class="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-400">
+        <button onclick="addTag()" class="bg-emerald-600 text-white px-5 py-2 rounded-xl text-sm hover:bg-emerald-700 transition">Добавить</button>
+      </div>
+      <div class="flex flex-wrap gap-2" id="tagsContainer">
+        ${tags.map(t=>`
+          <div class="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1.5">
+            <span class="text-sm font-medium">#${t.name}</span>
+            <span class="text-xs text-gray-400 ml-1">${t.posts_count||0}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+async function addTag() {
+  const input = document.getElementById('newTagInput');
+  const name  = input.value.trim().toLowerCase();
+  if (!name) return;
+  const res = await apiFetch('/tags/', { method:'POST', body: JSON.stringify({ name }) });
+  if (res && res.ok) { input.value=''; renderTags(); }
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+async function renderCalendar() {
+  const main = document.getElementById('mainContent');
+  const res  = await apiFetch('/posts/?page_size=200');
+  const data = res && res.ok ? await res.json() : { items:[] };
+  const posts = data.items || [];
+
+  main.innerHTML = `
+    <h1 class="text-2xl font-semibold mb-5">Календарь публикаций</h1>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div class="flex justify-between items-center mb-4">
+        <button onclick="prevMonth()" class="p-2 hover:bg-gray-100 rounded-xl text-xl">‹</button>
+        <h2 id="calTitle" class="text-xl font-medium"></h2>
+        <button onclick="nextMonth()" class="p-2 hover:bg-gray-100 rounded-xl text-xl">›</button>
+      </div>
+      <div class="grid grid-cols-7 text-center text-xs text-gray-400 mb-2">
+        <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+      </div>
+      <div id="calGrid" class="grid grid-cols-7 gap-1"></div>
+    </div>
+  `;
+  renderCalGrid(calendarMonth, calendarYear, posts);
+}
+
+function renderCalGrid(month, year, posts) {
+    document.getElementById('calTitle').textContent =
+        new Date(year, month).toLocaleString('ru-RU', { month:'long', year:'numeric' });
+    
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    
+    const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+    const days = new Date(year, month+1, 0).getDate();
+    const today = new Date();
+    
+    for (let i = 0; i < firstDay; i++) {
+        grid.innerHTML += '<div></div>';
+    }
+    
+    for (let d = 1; d <= days; d++) {
+        const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        
+        // Конвертируем UTC дату в локальную для сравнения
+        const dp = posts.filter(p => {
+            if (!p.scheduled_at) return false;
+            // Создаём дату из строки UTC и конвертируем в локальную
+            const scheduledDate = new Date(p.scheduled_at.endsWith('Z') ? p.scheduled_at : p.scheduled_at + 'Z');
+            const postDay = scheduledDate.getDate();
+            const postMonth = scheduledDate.getMonth() + 1;
+            const postYear = scheduledDate.getFullYear();
+            
+            return postDay === d && postMonth === (month+1) && postYear === year;
+        });
+        
+        const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+        
+        grid.innerHTML += `
+            <div class="h-20 border rounded-xl p-1 text-xs cursor-pointer hover:border-emerald-400 transition ${isToday ? 'bg-emerald-50 border-emerald-300' : 'border-gray-100'}"
+                 onclick="showDayPosts('${ds}')">
+                <div class="font-medium ${isToday ? 'text-emerald-600' : ''}">${d}</div>
+                ${dp.slice(0,2).map(p => `<div class="truncate text-emerald-600 mt-0.5">${p.title || '(пост)'}</div>`).join('')}
+                ${dp.length > 2 ? `<div class="text-gray-400">+${dp.length-2}</div>` : ''}
+            </div>
+        `;
+    }
+}
+
+function showDayPosts(ds) {
+  alert(`Публикации на ${ds}:\n\nОткройте вкладку "Все публикации" и отфильтруйте по дате.`);
+}
+
+function prevMonth() {
+  calendarMonth--; if (calendarMonth<0){calendarMonth=11;calendarYear--;}
+  renderCalendar();
+}
+function nextMonth() {
+  calendarMonth++; if (calendarMonth>11){calendarMonth=0;calendarYear++;}
+  renderCalendar();
+}
+
+
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+function showModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!getToken()) { window.location.href = 'login.html'; return; }
+
+  const res = await apiFetch('/users/me');
+  if (!res || !res.ok) { logout(); return; }
+  currentUser = await res.json();
+
+  document.getElementById('headerUsername').textContent = currentUser.username;
+
+  // Кнопка модерации для менеджера
+  if (currentUser.role_id === 1) {
+    document.getElementById('nav-manager-section').innerHTML = `
+      <button onclick="loadPage('moderation')" id="nav-moderation" class="nav-btn">
+        <i class="fas fa-user-shield w-5"></i> Модерация
+      </button>
+    `;
+  }
+
+  loadPage('dashboard');
+});
+</script>
+</body>
+</html>
